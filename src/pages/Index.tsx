@@ -1,8 +1,9 @@
+import heroDashboard from "@/assets/hero-dashboard.jpg";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Check, Star, Zap, Users, BarChart3, Clock, Shield, HeadphonesIcon } from "lucide-react";
-import heroDashboard from "@/assets/hero-dashboard.jpg";
+import { BarChart3, Check, Clock, HeadphonesIcon, Shield, Star, Users, Zap } from "lucide-react";
+import { Link } from "react-router-dom"; // Adicione este import
 
 const Index = () => {
   return (
@@ -21,10 +22,12 @@ const Index = () => {
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</a>
             <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contato</a>
           </nav>
-          <Button variant="default">Começar Grátis</Button>
+          <Link to="/login"> {/* Use Link para redirecionar */}
+            <Button variant="default">Começar Grátis</Button>
+          </Link>
         </div>
       </header>
-
+      
       {/* Hero Section */}
       <section className="py-20 px-4 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto text-center max-w-6xl">
@@ -43,9 +46,11 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button variant="hero" size="xl">
-              Criar Primeiro Orçamento
-            </Button>
+            <Link to="/login"> {/* Use Link para redirecionar */}
+              <Button variant="hero" size="xl">
+                Criar Primeiro Orçamento
+              </Button>
+            </Link>
             <Button variant="outline" size="xl">
               Ver Demonstração
             </Button>
@@ -274,7 +279,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
             Pronto para <span className="text-primary">revolucionar</span> seus orçamentos?
@@ -283,9 +288,11 @@ const Index = () => {
             Junte-se a mais de 5.000 empresas que já automatizaram seus orçamentos
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero" size="xl">
-              Começar Gratuitamente
-            </Button>
+            <Link to="/login"> {/* Use Link para redirecionar */}
+              <Button variant="hero" size="xl">
+                Começar Gratuitamente
+              </Button>
+            </Link>
             <Button variant="outline" size="xl">
               Agendar Demonstração
             </Button>
