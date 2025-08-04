@@ -2,6 +2,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/providers/auth-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AIGenerationPage from "./pages/AIGenerationPage";
@@ -9,14 +10,19 @@ import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ManualProposalsPage from "./pages/ManualProposalsPage";
 import NotFound from "./pages/NotFound";
+import ProfilePage from "./pages/ProfilePage";
 import ProposalsPage from "./pages/ProposalsPage";
-import SavedProposalsPage from "./pages/SavedProposalsPage"; // Adicione este import
+import RegisterPage from "./pages/RegisterPage";
+import SavedProposalsPage from "./pages/SavedProposalsPage";
 
 const queryClient = new QueryClient();
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
-  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const { session, isLoading } = useAuth();
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
+  return session ? children : <Navigate to="/login" />;
 };
 
 const App = () => (
@@ -25,43 +31,47 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/propostas"
-            element={
-              <PrivateRoute>
-                <ProposalsPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/propostas/manual"
-            element={
-              <PrivateRoute>
-                <ManualProposalsPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/propostas/ia"
-            element={
-              <PrivateRoute>
-                <AIGenerationPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/propostas/salvas" // Adicione esta nova rota
-            element={
-              <PrivateRoute>
-                <SavedProposalsPage />
-              </PrivateRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/perfil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+            <Route
+              path="/propostas"
+              element={
+                <PrivateRoute>
+                  <ProposalsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/propostas/manual"
+              element={
+                <PrivateRoute>
+                  <ManualProposalsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/propostas/ia"
+              element={
+                <PrivateRoute>
+                  <AIGenerationPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/propostas/salvas"
+              element={
+                <PrivateRoute>
+                  <SavedProposalsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -1,17 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/ui/header";
 import { Brain, FileText, ListTodo } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ProposalsPage = () => {
   return (
     <div className="min-h-screen bg-background p-8">
+      <Header />
       <div className="container mx-auto max-w-4xl text-center">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+        <div className="my-12">
+          <h1 className="text-4xl md:text-5xl font-bold">
             Escolha como criar seu <span className="text-primary">orçamento</span>
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground mt-4">
             Selecione uma das opções abaixo para começar.
           </p>
         </div>

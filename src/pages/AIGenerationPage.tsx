@@ -1,26 +1,27 @@
-// src/pages/AIGenerationPage.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/providers/auth-provider";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Download, Feather, Palette, Plus, Save, Trash2, Wand2, Zap } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Download, Plus, Save, Trash2, Wand2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const AIGenerationPage = () => {
+  const [profile, setProfile] = useState(null);
+  const { session } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [aiStyle, setAiStyle] = useState("profissional");
   const [isEditing, setIsEditing] = useState(false);
 
-  // Campos que a IA vai gerar e que o usuário pode editar
   const [companyName, setCompanyName] = useState("");
   const [companyNumber, setCompanyNumber] = useState("");
   const [companyCnpj, setCompanyCnpj] = useState("");
@@ -38,9 +39,31 @@ const AIGenerationPage = () => {
 
   const proposalRef = useRef(null);
 
+  useEffect(() => {
+    if (session) {
+      const fetchProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        if (data) {
+          setProfile(data);
+        }
+      };
+      fetchProfile();
+    }
+  }, [session]);
+
   const handleGenerate = async () => {
+    if (!session) {
+      toast.error("Você precisa estar logado para usar a IA.");
+      return;
+    }
+    
     setIsLoading(true);
-    setIsEditing(false); // Desativa a edição enquanto gera
+    setIsEditing(false);
+
     try {
       const response = await fetch("http://localhost:3001/generate-proposal", {
         method: "POST",
@@ -55,7 +78,6 @@ const AIGenerationPage = () => {
       }
 
       const data = await response.json();
-      // Popula os campos do formulário com a resposta da IA
       setCompanyName(data.companyName || "");
       setCompanyNumber(data.companyNumber || "");
       setCompanyCnpj(data.companyCnpj || "");
@@ -69,11 +91,11 @@ const AIGenerationPage = () => {
       setObservations(data.observations || "");
       setPaymentTerms(data.paymentTerms || "");
 
-      setIsEditing(true); // Ativa o modo de edição
+      setIsEditing(true);
       toast.success("Orçamento gerado! Agora você pode editar os detalhes.");
     } catch (error) {
-      console.error("Error generating proposal:", error);
-      toast.error("Erro ao gerar o orçamento. Tente novamente.");
+      toast.error("Erro ao gerar orçamento com IA.");
+      console.error("API error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -101,30 +123,39 @@ const AIGenerationPage = () => {
     );
   }, [lineItems]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!session) {
+      toast.error("Você precisa estar logado para salvar propostas.");
+      return;
+    }
+  
     const newProposal = {
-      id: Date.now(),
-      companyName,
-      companyNumber,
-      companyCnpj,
-      companyEmail,
-      clientName,
-      clientNumber,
-      clientLocation,
-      proposalTitle,
-      lineItems,
+      user_id: session.user.id,
+      company_name: companyName,
+      company_number: companyNumber,
+      company_cnpj: companyCnpj,
+      company_email: companyEmail,
+      client_name: clientName,
+      client_number: clientNumber,
+      client_location: clientLocation,
+      title: proposalTitle,
+      line_items: lineItems,
       deadline,
       observations,
-      paymentTerms,
+      payment_terms: paymentTerms,
       total: calculateTotal,
-      timestamp: new Date().toISOString(),
     };
-    
-    const savedProposals = JSON.parse(localStorage.getItem("propostas") || "[]");
-    localStorage.setItem("propostas", JSON.stringify([...savedProposals, newProposal]));
-    toast.success("Orçamento salvo com sucesso!");
-  };
   
+    const { error } = await supabase.from('proposals').insert([newProposal]);
+  
+    if (error) {
+      toast.error("Erro ao salvar o orçamento.");
+      console.error("Supabase error:", error);
+    } else {
+      toast.success("Orçamento salvo com sucesso!");
+    }
+  };
+
   const handleDownloadPdf = () => {
     if (proposalRef.current) {
       toast.info("Preparando download do PDF...");
@@ -146,68 +177,38 @@ const AIGenerationPage = () => {
 
   return (
     <div className="min-h-screen bg-background p-8 md:p-12">
+      <Header />
       <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Geração de Orçamento com IA</h1>
-          <Link to="/propostas">
-            <Button variant="outline">Voltar para Opções</Button>
-          </Link>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Formulário de Geração e Edição */}
+        <div className="grid lg:grid-cols-2 gap-8 mt-8">
           <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle>Descreva sua proposta</CardTitle>
+                <CardTitle>Detalhes da Geração</CardTitle>
                 <CardDescription>
-                  Forneça uma descrição detalhada e gere um rascunho com a IA.
+                  Preencha os dados e deixe a IA criar um orçamento para você.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-2">
-                  <Label htmlFor="prompt">Detalhes do Projeto</Label>
+                  <Label htmlFor="companyName">Nome da Empresa</Label>
+                  <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="clientName">Nome do Cliente</Label>
+                  <Input id="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Descrição do Serviço</Label>
                   <Textarea
-                    id="prompt"
-                    placeholder="Ex: Orçamento para um e-commerce de roupas. Cliente 'Moda Chic', serviços de design, desenvolvimento e suporte."
-                    rows={6}
+                    id="description"
+                    placeholder="Ex: Criação de um website para uma loja de roupas com e-commerce, sistema de pagamentos e painel de administração."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
+                    rows={6}
                   />
                 </div>
-                <div className="mt-4">
-                  <Label>Estilo do Orçamento</Label>
-                  <ToggleGroup
-                    type="single"
-                    value={aiStyle}
-                    onValueChange={(value) => setAiStyle(value)}
-                    className="mt-2"
-                  >
-                    <ToggleGroupItem value="profissional" aria-label="Profissional">
-                      <Zap className="h-4 w-4 mr-2" /> Profissional
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="criativo" aria-label="Criativo">
-                      <Palette className="h-4 w-4 mr-2" /> Criativo
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="conciso" aria-label="Conciso">
-                      <Feather className="h-4 w-4 mr-2" /> Conciso
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-                <Button onClick={handleGenerate} disabled={!prompt || isLoading} className="w-full mt-6" variant="hero">
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="h-4 w-4 mr-2" /> Gerar Orçamento com IA
-                    </>
-                  )}
+                <Button className="w-full" onClick={handleGenerate} disabled={isLoading}>
+                  {isLoading ? "Gerando..." : <><Wand2 className="h-4 w-4 mr-2" /> Gerar com IA</>}
                 </Button>
               </CardContent>
             </Card>
@@ -216,58 +217,10 @@ const AIGenerationPage = () => {
               <>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Informações da Empresa</CardTitle>
-                    <CardDescription>Ajuste os dados da sua empresa.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="companyName">Nome da Empresa</Label>
-                      <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="companyNumber">Seu Número</Label>
-                        <Input id="companyNumber" placeholder="(XX) XXXXX-XXXX" value={companyNumber} onChange={(e) => setCompanyNumber(e.target.value)} />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="companyCnpj">Seu CNPJ</Label>
-                        <Input id="companyCnpj" placeholder="XX.XXX.XXX/XXXX-XX" value={companyCnpj} onChange={(e) => setCompanyCnpj(e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="companyEmail">Seu Email</Label>
-                      <Input id="companyEmail" type="email" placeholder="contato@orcafacil.com" value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informações do Cliente</CardTitle>
-                    <CardDescription>Ajuste os dados do cliente.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="clientName">Nome do Cliente</Label>
-                      <Input id="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="clientNumber">Número do Cliente</Label>
-                        <Input id="clientNumber" placeholder="(XX) XXXXX-XXXX" value={clientNumber} onChange={(e) => setClientNumber(e.target.value)} />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="clientLocation">Localização do Cliente</Label>
-                        <Input id="clientLocation" placeholder="Ex: São Paulo, SP" value={clientLocation} onChange={(e) => setClientLocation(e.target.value)} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Detalhes do Orçamento</CardTitle>
-                    <CardDescription>Edite o título e os itens da proposta.</CardDescription>
+                    <CardTitle>Detalhes do Orçamento Gerado</CardTitle>
+                    <CardDescription>
+                      Revise e edite o orçamento antes de salvar ou baixar.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid gap-2">
@@ -314,14 +267,6 @@ const AIGenerationPage = () => {
                         <Plus className="h-4 w-4 mr-2" /> Adicionar Item
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Detalhes Adicionais</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
                     <div className="grid gap-2">
                       <Label htmlFor="deadline">Prazo de Entrega</Label>
                       <Input id="deadline" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
@@ -336,25 +281,24 @@ const AIGenerationPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <div className="flex justify-end gap-2">
-                    <Button onClick={handleSave} variant="secondary">
-                        <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
-                    </Button>
-                    <Button onClick={handleDownloadPdf}>
-                        <Download className="h-4 w-4 mr-2" /> Baixar PDF
-                    </Button>
+                  <Button onClick={handleSave} variant="secondary">
+                      <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
+                  </Button>
+                  <Button onClick={handleDownloadPdf}>
+                      <Download className="h-4 w-4 mr-2" /> Baixar PDF
+                  </Button>
                 </div>
               </>
             )}
           </div>
 
-          {/* Pré-visualização do Orçamento (Lado Direito) */}
           <Card 
             ref={proposalRef}
             className={cn(
             "p-8 sticky top-12 self-start bg-white shadow-xl w-full max-w-[794px] lg:h-[1123px] overflow-auto",
-            { "opacity-50": isLoading }
+            !proposalTitle && "hidden"
           )}>
             <CardHeader className="p-0 mb-6 border-b-2 border-primary pb-4">
               <div className="flex justify-between items-start">
@@ -376,7 +320,7 @@ const AIGenerationPage = () => {
             </CardHeader>
             <CardContent className="p-0">
               <h3 className="text-xl font-semibold mb-4">
-                {proposalTitle || "Título do Orçamento Gerado"}
+                {proposalTitle || "Título do Orçamento"}
               </h3>
               <div className="border rounded-md">
                 <div className="grid grid-cols-10 font-bold bg-muted p-2 rounded-t-md">

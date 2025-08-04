@@ -1,92 +1,126 @@
-// src/pages/SavedProposalsPage.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Eye, FileText, Pencil, Trash2 } from "lucide-react";
+import Header from "@/components/ui/header";
+import { supabase } from "@/lib/supabase";
+import { FileText, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
+interface LineItem {
+  description: string;
+  quantity: number;
+  price: number;
+}
+
+interface Proposal {
+  id: string;
+  title: string;
+  client_name: string;
+  created_at: string;
+  total: number;
+  line_items: LineItem[];
+}
+
 const SavedProposalsPage = () => {
-  const [proposals, setProposals] = useState([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProposals = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Erro: Usuário não autenticado.");
+      setIsLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('proposals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erro ao carregar orçamentos.");
+      console.error("Supabase error:", error);
+    } else if (data) {
+      setProposals(data as Proposal[]);
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    loadProposals();
+    fetchProposals();
   }, []);
 
-  const loadProposals = () => {
-    const savedProposals = JSON.parse(localStorage.getItem("propostas") || "[]");
-    setProposals(savedProposals);
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('proposals')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error("Erro ao excluir o orçamento.");
+      console.error("Supabase error:", error);
+    } else {
+      toast.success("Orçamento excluído com sucesso!");
+      fetchProposals();
+    }
   };
 
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString('pt-BR', options);
-  };
-  
-  const handleDelete = (id) => {
-    const updatedProposals = proposals.filter(proposal => proposal.id !== id);
-    localStorage.setItem("propostas", JSON.stringify(updatedProposals));
-    setProposals(updatedProposals);
-    toast.success("Orçamento excluído com sucesso!");
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Carregando orçamentos...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-8 md:p-12">
-      <div className="container mx-auto max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
+      <Header />
+      <div className="container mx-auto max-w-7xl">
+        <div className="my-8">
           <h1 className="text-3xl font-bold">Meus Orçamentos</h1>
-          <Link to="/propostas/manual">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-            </Button>
-          </Link>
+          <p className="text-muted-foreground mt-2">Visualize, gerencie e edite seus orçamentos salvos.</p>
         </div>
 
-        <div className="space-y-4">
-          {proposals.length > 0 ? (
-            proposals.map((proposal) => (
+        {proposals.length === 0 ? (
+          <Card className="text-center p-8">
+            <CardContent>
+              <FileText className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              <p className="text-xl font-semibold mb-2">Nenhum orçamento encontrado.</p>
+              <p className="text-muted-foreground mb-4">Crie um novo orçamento para começar!</p>
+              <Link to="/propostas/manual">
+                <Button>Criar Orçamento Manual</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {proposals.map((proposal) => (
               <Card key={proposal.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{proposal.proposalTitle || "Orçamento sem Título"}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{formatDate(proposal.timestamp)}</p>
-                  </div>
-                  <CardDescription>Cliente: {proposal.clientName || "Não informado"}</CardDescription>
+                  <CardTitle>{proposal.title}</CardTitle>
+                  <CardDescription>Cliente: {proposal.client_name}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between items-center">
-                    <p className="text-lg font-bold text-primary">Total: R$ {proposal.total.toFixed(2)}</p>
-                    <div className="flex gap-2">
-                       <Link to={`/propostas/manual?id=${proposal.id}`}>
-                        <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Link to={`/propostas/manual?id=${proposal.id}&edit=true`}>
-                         <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                       <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
+                <CardContent className="flex justify-between items-center">
+                  <div className="text-lg font-semibold">
+                    R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Link to={`/propostas/${proposal.id}`}>
+                      <Button size="sm">Ver Detalhes</Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
-            ))
-          ) : (
-            <div className="text-center p-8">
-              <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Você ainda não salvou nenhum orçamento.</p>
-              <Link to="/propostas/manual">
-                <Button className="mt-4">Criar meu primeiro orçamento</Button>
-              </Link>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
