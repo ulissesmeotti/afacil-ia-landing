@@ -1,5 +1,7 @@
+// src/pages/ProfilePage.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/ui/header";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
@@ -51,7 +53,6 @@ const ProfilePage = () => {
         .single();
       
       if (error && error.code === 'PGRST116') {
-        // Se o perfil não existir, crie-o
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({ id: session.user.id, email: session.user.email, plan_type: 'gratuito' });
@@ -60,7 +61,7 @@ const ProfilePage = () => {
           console.error("Supabase error:", insertError);
         } else {
           toast.info("Seu perfil foi criado!");
-          fetchProfile(); // Busque o perfil novamente
+          fetchProfile();
         }
       } else if (error) {
         toast.error("Erro ao carregar perfil.");
@@ -101,53 +102,56 @@ const ProfilePage = () => {
   const planDetails = plans[currentPlan];
 
   return (
-    <div className="min-h-screen bg-background p-8 md:p-12">
-      <div className="container mx-auto max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Meu Perfil</h1>
-          <Link to="/propostas">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-            </Button>
-          </Link>
-        </div>
+    <>
+      <Header />
+      <div className="min-h-screen bg-background p-8 md:p-12">
+        <div className="container mx-auto max-w-4xl">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold">Meu Perfil</h1>
+            <Link to="/propostas">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+              </Button>
+            </Link>
+          </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Plano Atual: <span className="text-primary">{planDetails?.name}</span></CardTitle>
-            <CardDescription>
-              {profile?.email}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Uso de Orçamentos Manuais: <span className="font-semibold">{profile?.manual_usage_count} / {planDetails?.manualLimit === Infinity ? "Ilimitado" : planDetails?.manualLimit}</span></p>
-            <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
-          </CardContent>
-        </Card>
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Plano Atual: <span className="text-primary">{planDetails?.name}</span></CardTitle>
+              <CardDescription>
+                {profile?.email}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Uso de Orçamentos Manuais: <span className="font-semibold">{profile?.manual_usage_count} / {planDetails?.manualLimit === Infinity ? "Ilimitado" : planDetails?.manualLimit}</span></p>
+              <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
+            </CardContent>
+          </Card>
 
-        <h2 className="text-2xl font-bold mb-4 text-center">Planos Disponíveis</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {Object.entries(plans).map(([key, plan]) => (
-            <Card key={key} className={cn("text-center", { "border-primary-glow border-2 shadow-lg": key === currentPlan })}>
-              <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-                <h3 className="text-3xl font-bold mt-2">{plan.price}</h3>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.manualLimit === Infinity ? "Criação Manual Ilimitada" : `${plan.manualLimit} Orçamentos Manuais`}</p>
-                <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.aiLimit === Infinity ? "Criação com IA Ilimitada" : `${plan.aiLimit} Orçamentos com IA`}</p>
-                {currentPlan === key ? (
-                  <Button disabled className="w-full mt-4">Plano Atual</Button>
-                ) : (
-                  <Button className="w-full mt-4" onClick={() => handleUpgrade(key)}>Fazer Upgrade</Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          <h2 className="text-2xl font-bold mb-4 text-center">Planos Disponíveis</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {Object.entries(plans).map(([key, plan]) => (
+              <Card key={key} className={cn("text-center", { "border-primary-glow border-2 shadow-lg": key === currentPlan })}>
+                <CardHeader>
+                  <CardTitle>{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                  <h3 className="text-3xl font-bold mt-2">{plan.price}</h3>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.manualLimit === Infinity ? "Criação Manual Ilimitada" : `${plan.manualLimit} Orçamentos Manuais`}</p>
+                  <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.aiLimit === Infinity ? "Criação com IA Ilimitada" : `${plan.aiLimit} Orçamentos com IA`}</p>
+                  {currentPlan === key ? (
+                    <Button disabled className="w-full mt-4">Plano Atual</Button>
+                  ) : (
+                    <Button className="w-full mt-4" onClick={() => handleUpgrade(key)}>Fazer Upgrade</Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
