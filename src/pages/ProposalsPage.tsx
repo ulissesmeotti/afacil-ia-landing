@@ -1,10 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
+import usePlanLimits from "@/hooks/usePlanLimits";
+import { useSession } from "@supabase/auth-helpers-react";
 import { Brain, FileText, ListTodo } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ProposalsPage = () => {
+  const session = useSession();
+  const { loading, limits } = usePlanLimits(session?.user?.id);
+
+  const isAIBlocked =
+    !loading &&
+    limits &&
+    (limits.planType === "gratuito" || limits.aiUsed >= limits.aiLimit);
+
   return (
     <div className="min-h-screen bg-background p-8">
       <Header />
@@ -33,11 +43,18 @@ const ProposalsPage = () => {
               <CardDescription className="text-center">
                 Deixe nossa Inteligência Artificial criar uma proposta personalizada para você em segundos.
               </CardDescription>
-              <Link to="/propostas/ia" className="w-full">
-                <Button variant="hero" className="w-full">
-                  Usar IA
+
+              {isAIBlocked ? (
+                <Button variant="hero" className="w-full" disabled>
+                  {limits?.planType === "gratuito"
+                    ? "Disponível apenas no plano Pro"
+                    : "Limite de uso atingido"}
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/propostas/ia" className="w-full">
+                  <Button variant="hero" className="w-full">Usar IA</Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
 
@@ -66,15 +83,15 @@ const ProposalsPage = () => {
         
         {/* Nova seção para orçamentos salvos */}
         <div className="mt-12 text-center">
-            <h2 className="text-2xl font-bold mb-4">Já tem um orçamento salvo?</h2>
-            <p className="text-muted-foreground mb-6">
-                Acesse e gerencie suas propostas salvas a qualquer momento.
-            </p>
-            <Link to="/propostas/salvas">
-                <Button variant="outline" size="lg">
-                    <ListTodo className="h-5 w-5 mr-2" /> Meus Orçamentos
-                </Button>
-            </Link>
+          <h2 className="text-2xl font-bold mb-4">Já tem um orçamento salvo?</h2>
+          <p className="text-muted-foreground mb-6">
+            Acesse e gerencie suas propostas salvas a qualquer momento.
+          </p>
+          <Link to="/propostas/salvas">
+            <Button variant="outline" size="lg">
+              <ListTodo className="h-5 w-5 mr-2" /> Meus Orçamentos
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

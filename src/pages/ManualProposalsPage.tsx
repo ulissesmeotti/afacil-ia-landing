@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
@@ -16,17 +17,19 @@ import { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
-const plans = {
-  gratuito: { manualLimit: 5, aiLimit: 0 },
-  pro: { manualLimit: 40, aiLimit: 10 },
-  enterprise: { manualLimit: Infinity, aiLimit: Infinity },
-};
+interface LineItem {
+  description: string;
+  quantity: number;
+  price: number;
+}
 
 const ManualProposalsPage = () => {
   const [searchParams] = useSearchParams();
-  const proposalId = searchParams.get('id');
+  const proposalId = searchParams.get("id");
   const { session } = useAuth();
-  
+  const userId = session?.user.id ?? null;
+  const { profile, planDetails, isLoading: planLoading, canCreate, incrementUsage } = usePlanLimits(userId);
+
   const [companyName, setCompanyName] = useState("");
   const [companyNumber, setCompanyNumber] = useState("");
   const [companyCnpj, setCompanyCnpj] = useState("");
@@ -40,31 +43,20 @@ const ManualProposalsPage = () => {
   const [deadline, setDeadline] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
   const [observations, setObservations] = useState("");
-  const [lineItems, setLineItems] = useState([{ description: "", quantity: 1, price: 0 }]);
-  
-  const proposalRef = useRef(null);
+  const [lineItems, setLineItems] = useState<LineItem[]>([{ description: "", quantity: 1, price: 0 }]);
 
-  const addLineItem = () => {
-    setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
+  const proposalRef = useRef<HTMLDivElement | null>(null);
+
+  const addLineItem = () => setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
+  const removeLineItem = (index: number) => setLineItems(lineItems.filter((_, i) => i !== index));
+  const handleLineItemChange = (index: number, field: keyof LineItem, value: any) => {
+    setLineItems((prev) => prev.map((it, i) => (i === index ? { ...it, [field]: value } : it)));
   };
 
-  const removeLineItem = (index) => {
-    setLineItems(lineItems.filter((_, i) => i !== index));
-  };
-
-  const handleLineItemChange = (index, field, value) => {
-    const newItems = lineItems.map((item, i) =>
-      i === index ? { ...item, [field]: value } : item
-    );
-    setLineItems(newItems);
-  };
-
-  const calculateTotal = useMemo(() => {
-    return lineItems.reduce(
-      (total, item) => total + item.quantity * item.price,
-      0
-    );
-  }, [lineItems]);
+  const calculateTotal = useMemo(
+    () => lineItems.reduce((total, item) => total + item.quantity * item.price, 0),
+    [lineItems]
+  );
 
   const resetForm = () => {
     setCompanyName("");
@@ -87,32 +79,21 @@ const ManualProposalsPage = () => {
       return;
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-    
-    if (profileError || !profile) {
-      toast.error("Erro ao verificar seu plano.");
-      console.error("Supabase error:", profileError);
+    // checar limite com o hook
+    if (!canCreate("manual")) {
+      const limit = planDetails.manualLimit === Infinity ? "Ilimitado" : planDetails.manualLimit;
+      toast.error(`Você atingiu o limite de ${limit} orçamentos manuais do seu plano.`);
       return;
     }
 
-    const planDetails = plans[profile.plan_type || 'gratuito'];
-    if (profile.manual_usage_count >= planDetails.manualLimit) {
-      toast.error(`Você atingiu o limite de ${planDetails.manualLimit} orçamentos manuais do seu plano.`);
-      return;
-    }
-  
     const newProposal = {
       user_id: session.user.id,
       company_name: companyName,
-      company_number: companyNumber === "" ? null : Number(companyNumber),
-      company_cnpj: companyCnpj === "" ? null : Number(companyCnpj),
+      company_number: companyNumber,
+      company_cnpj: companyCnpj,
       company_email: companyEmail,
       client_name: clientName,
-      client_number: clientNumber === "" ? null : Number(clientNumber),
+      client_number: clientNumber,
       client_location: clientLocation,
       title: proposalTitle,
       line_items: lineItems,
@@ -121,25 +102,34 @@ const ManualProposalsPage = () => {
       payment_terms: paymentTerms,
       total: calculateTotal,
     };
-  
-    const { error } = await supabase.from('proposals').insert([newProposal]);
-  
+
+    const { error } = await supabase.from("proposals").insert([newProposal]);
+
     if (error) {
       toast.error("Erro ao salvar o orçamento.");
       console.error("Supabase error:", error);
-    } else {
-      const newCount = (profile.manual_usage_count || 0) + 1;
-      await supabase.from('profiles').update({ manual_usage_count: newCount }).eq('id', session.user.id);
-      
-      toast.success("Orçamento salvo com sucesso!");
-      resetForm();
+      return;
     }
+
+    try {
+      // incrementa o contador no perfil
+      await incrementUsage("manual");
+    } catch (incErr) {
+      // se falhar aqui, já salvou a proposta — notificar e logar
+      console.error("Erro ao incrementar contagem:", incErr);
+      toast.error("Orçamento salvo, mas houve erro ao atualizar contagem do plano.");
+      resetForm();
+      return;
+    }
+
+    toast.success("Orçamento salvo com sucesso!");
+    resetForm();
   };
 
   const handleDownloadPdf = () => {
     if (proposalRef.current) {
       toast.info("Preparando download do PDF...");
-      html2canvas(proposalRef.current, { scale: 2, backgroundColor: '#ffffff' }).then((canvas) => {
+      html2canvas(proposalRef.current, { scale: 2, backgroundColor: "#ffffff" }).then((canvas) => {
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();

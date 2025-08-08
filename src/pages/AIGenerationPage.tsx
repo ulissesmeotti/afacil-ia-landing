@@ -1,3 +1,4 @@
+// src/pages/AIGenerationPage.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
@@ -5,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
@@ -15,8 +17,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const AIGenerationPage = () => {
-  const [profile, setProfile] = useState(null);
   const { session } = useAuth();
+  const userId = session?.user.id ?? null;
+  const { profile, planDetails, canCreate, incrementUsage } = usePlanLimits(userId);
+
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [aiStyle, setAiStyle] = useState("profissional");
@@ -30,37 +34,41 @@ const AIGenerationPage = () => {
   const [clientNumber, setClientNumber] = useState("");
   const [clientLocation, setClientLocation] = useState("");
   const [proposalTitle, setProposalTitle] = useState("");
-  const [lineItems, setLineItems] = useState([
-    { description: "", quantity: 1, price: 0 },
-  ]);
+  const [lineItems, setLineItems] = useState([{ description: "", quantity: 1, price: 0 }]);
   const [deadline, setDeadline] = useState("");
   const [observations, setObservations] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
 
-  const proposalRef = useRef(null);
+  const proposalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (session) {
-      const fetchProfile = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        if (data) {
-          setProfile(data);
-        }
-      };
-      fetchProfile();
-    }
-  }, [session]);
+    // profile já é carregado dentro do hook usePlanLimits
+  }, [profile]);
+
+  const addLineItem = () => setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
+  const removeLineItem = (index: number) => setLineItems(lineItems.filter((_, i) => i !== index));
+  const handleLineItemChange = (index: number, field: string, value: any) => {
+    setLineItems((prev) => prev.map((it, i) => (i === index ? { ...it, [field]: value } : it)));
+  };
+
+  const calculateTotal = useMemo(
+    () => lineItems.reduce((total, item) => total + item.quantity * item.price, 0),
+    [lineItems]
+  );
 
   const handleGenerate = async () => {
     if (!session) {
       toast.error("Você precisa estar logado para usar a IA.");
       return;
     }
-    
+
+    // Verifica limite antes de chamar a API de geração
+    if (!canCreate("ai")) {
+      const limit = planDetails.aiLimit === Infinity ? "Ilimitado" : planDetails.aiLimit;
+      toast.error(`Você atingiu o limite de ${limit} orçamentos com IA do seu plano.`);
+      return;
+    }
+
     setIsLoading(true);
     setIsEditing(false);
 
@@ -91,6 +99,14 @@ const AIGenerationPage = () => {
       setObservations(data.observations || "");
       setPaymentTerms(data.paymentTerms || "");
 
+      // incrementa o contador de IA — contando no ato da geração
+      try {
+        await incrementUsage("ai");
+      } catch (incErr) {
+        console.error("Erro ao incrementar uso de IA:", incErr);
+        toast.error("Orçamento gerado, mas não foi possível atualizar uso do plano.");
+      }
+
       setIsEditing(true);
       toast.success("Orçamento gerado! Agora você pode editar os detalhes.");
     } catch (error) {
@@ -101,34 +117,12 @@ const AIGenerationPage = () => {
     }
   };
 
-  const addLineItem = () => {
-    setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
-  };
-
-  const removeLineItem = (index) => {
-    setLineItems(lineItems.filter((_, i) => i !== index));
-  };
-
-  const handleLineItemChange = (index, field, value) => {
-    const newItems = lineItems.map((item, i) =>
-      i === index ? { ...item, [field]: value } : item
-    );
-    setLineItems(newItems);
-  };
-
-  const calculateTotal = useMemo(() => {
-    return lineItems.reduce(
-      (total, item) => total + item.quantity * item.price,
-      0
-    );
-  }, [lineItems]);
-
   const handleSave = async () => {
     if (!session) {
       toast.error("Você precisa estar logado para salvar propostas.");
       return;
     }
-  
+
     const newProposal = {
       user_id: session.user.id,
       company_name: companyName,
@@ -145,9 +139,9 @@ const AIGenerationPage = () => {
       payment_terms: paymentTerms,
       total: calculateTotal,
     };
-  
-    const { error } = await supabase.from('proposals').insert([newProposal]);
-  
+
+    const { error } = await supabase.from("proposals").insert([newProposal]);
+
     if (error) {
       toast.error("Erro ao salvar o orçamento.");
       console.error("Supabase error:", error);
@@ -159,7 +153,7 @@ const AIGenerationPage = () => {
   const handleDownloadPdf = () => {
     if (proposalRef.current) {
       toast.info("Preparando download do PDF...");
-      html2canvas(proposalRef.current, { scale: 2, backgroundColor: '#ffffff' }).then((canvas) => {
+      html2canvas(proposalRef.current, { scale: 2, backgroundColor: "#ffffff" }).then((canvas) => {
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();

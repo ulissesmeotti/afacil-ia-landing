@@ -1,4 +1,3 @@
-// src/components/ui/header.tsx
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
