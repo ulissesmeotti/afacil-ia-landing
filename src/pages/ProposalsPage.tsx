@@ -2,18 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
 import usePlanLimits from "@/hooks/usePlanLimits";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/providers/auth-provider";
 import { Brain, FileText, ListTodo } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ProposalsPage = () => {
-  const session = useSession();
-  const { loading, limits } = usePlanLimits(session?.user?.id);
+  const { session } = useAuth();
+  const { isLoading, profile, planDetails, canCreate } = usePlanLimits(session?.user?.id);
 
-  const isAIBlocked =
-    !loading &&
-    limits &&
-    (limits.planType === "gratuito" || limits.aiUsed >= limits.aiLimit);
+  const isAIBlocked = !canCreate("ai");
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -46,7 +43,7 @@ const ProposalsPage = () => {
 
               {isAIBlocked ? (
                 <Button variant="hero" className="w-full" disabled>
-                  {limits?.planType === "gratuito"
+                  {profile?.plan_type === "gratuito"
                     ? "Disponível apenas no plano Pro"
                     : "Limite de uso atingido"}
                 </Button>

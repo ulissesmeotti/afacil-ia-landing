@@ -5,9 +5,9 @@ import Header from "@/components/ui/header";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const plans = {
@@ -37,11 +37,21 @@ const plans = {
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { session } = useAuth();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetchProfile();
-  }, [session]);
+    
+    // Check for success/cancel parameters
+    if (searchParams.get('success') === 'true') {
+      toast.success("Pagamento processado! Verificando sua assinatura...");
+      checkSubscription();
+    } else if (searchParams.get('canceled') === 'true') {
+      toast.info("Pagamento cancelado.");
+    }
+  }, [session, searchParams]);
 
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -73,20 +83,60 @@ const ProfilePage = () => {
     setIsLoading(false);
   };
 
-  const handleUpgrade = async (planType) => {
+  const checkSubscription = async () => {
     if (!session) return;
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ plan_type: planType })
-      .eq('id', session.user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (error) throw error;
+      
+      console.log('Subscription check result:', data);
+      fetchProfile(); // Refresh profile after checking subscription
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      toast.error("Erro ao verificar assinatura.");
+    }
+  };
+
+  const handleUpgrade = async (planType) => {
+    if (!session || planType === 'gratuito') return;
+
+    setIsProcessing(true);
     
-    if (error) {
-      toast.error("Erro ao atualizar o plano.");
-      console.error("Supabase error:", error);
-    } else {
-      toast.success(`Seu plano foi atualizado para ${plans[planType].name}!`);
-      fetchProfile();
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { planType }
+      });
+      
+      if (error) throw error;
+      
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast.error("Erro ao processar pagamento. Tente novamente.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!session) return;
+
+    setIsProcessing(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+      
+      // Open customer portal in a new tab
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      toast.error("Erro ao abrir portal de gerenciamento.");
+    } finally {
+      setIsProcessing(false);
     }
   };
   
@@ -122,9 +172,23 @@ const ProfilePage = () => {
                 {profile?.email}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p>Uso de Orçamentos Manuais: <span className="font-semibold">{profile?.manual_usage_count} / {planDetails?.manualLimit === Infinity ? "Ilimitado" : planDetails?.manualLimit}</span></p>
-              <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
+            <CardContent className="space-y-4">
+              <p>Uso de Orçamentos Manuais: <span className="font-semibold">{profile?.manual_usage_count || 0} / {planDetails?.manualLimit === Infinity ? "Ilimitado" : planDetails?.manualLimit}</span></p>
+              <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count || 0} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
+              
+              {currentPlan !== 'gratuito' && (
+                <div className="pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleManageSubscription}
+                    disabled={isProcessing}
+                    className="w-full"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    {isProcessing ? "Carregando..." : "Gerenciar Assinatura"}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -142,8 +206,18 @@ const ProfilePage = () => {
                   <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.aiLimit === Infinity ? "Criação com IA Ilimitada" : `${plan.aiLimit} Orçamentos com IA`}</p>
                   {currentPlan === key ? (
                     <Button disabled className="w-full mt-4">Plano Atual</Button>
+                  ) : key === 'gratuito' ? (
+                    <Button variant="outline" className="w-full mt-4" disabled>
+                      Plano Gratuito
+                    </Button>
                   ) : (
-                    <Button className="w-full mt-4" onClick={() => handleUpgrade(key)}>Fazer Upgrade</Button>
+                    <Button 
+                      className="w-full mt-4" 
+                      onClick={() => handleUpgrade(key)}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? "Processando..." : "Assinar Agora"}
+                    </Button>
                   )}
                 </CardContent>
               </Card>
