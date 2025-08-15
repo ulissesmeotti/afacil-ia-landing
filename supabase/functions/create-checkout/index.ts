@@ -14,38 +14,78 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { 
-      status: 200,
-      headers: corsHeaders 
-    });
-  }
-
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
+  // Always ensure CORS headers are returned
   try {
-    logStep("Function started");
+    logStep("Request received", { method: req.method, url: req.url });
 
-    const { planType } = await req.json();
+    // Handle CORS preflight requests
+    if (req.method === "OPTIONS") {
+      logStep("OPTIONS request - returning CORS headers");
+      return new Response(null, { 
+        status: 200,
+        headers: corsHeaders 
+      });
+    }
+
+    // Validate environment variables first
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Missing Supabase configuration");
+    }
+
+    if (!stripeSecretKey) {
+      throw new Error("Missing Stripe configuration");
+    }
+
+    logStep("Environment variables validated");
+
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+    logStep("Processing POST request");
+
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      logStep("Request body parsed", { body: requestBody });
+    } catch (e) {
+      throw new Error("Invalid JSON in request body");
+    }
+
+    const { planType } = requestBody;
     if (!planType || !["pro", "enterprise"].includes(planType)) {
       throw new Error("Invalid plan type");
     }
 
-    const authHeader = req.headers.get("Authorization")!;
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header");
+    }
+
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
+    logStep("Authenticating user");
+    
+    const { data, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError) {
+      throw new Error(`Authentication error: ${authError.message}`);
+    }
+    
     const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      throw new Error("User not authenticated or email not available");
+    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
+    // Initialize Stripe
+    const stripe = new Stripe(stripeSecretKey, { 
       apiVersion: "2023-10-16" 
     });
 
+    // Check for existing customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
@@ -68,7 +108,9 @@ serve(async (req) => {
     };
 
     const selectedPlan = planDetails[planType as keyof typeof planDetails];
+    logStep("Creating checkout session", { plan: selectedPlan });
     
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -93,9 +135,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-checkout", { message: errorMessage });
+    logStep("ERROR in create-checkout", { message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
