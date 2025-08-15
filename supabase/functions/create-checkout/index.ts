@@ -8,120 +8,107 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
-};
-
-// Force new deployment - Version 2.0
-
 serve(async (req) => {
-  // Always ensure CORS headers are returned
+  console.log(`[CREATE-CHECKOUT] REQUEST: ${req.method} ${req.url}`);
+  
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    console.log("[CREATE-CHECKOUT] Handling OPTIONS request");
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
+  }
+
   try {
-    logStep("Request received", { method: req.method, url: req.url });
-
-    // Handle CORS preflight requests
-    if (req.method === "OPTIONS") {
-      logStep("OPTIONS request - returning CORS headers");
-      return new Response(null, { 
-        status: 200,
-        headers: corsHeaders 
-      });
+    console.log("[CREATE-CHECKOUT] Starting checkout process");
+    
+    // Check environment variables immediately
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("[CREATE-CHECKOUT] Stripe key exists:", !!stripeKey);
+    console.log("[CREATE-CHECKOUT] Stripe key prefix:", stripeKey?.substring(0, 10));
+    
+    if (!stripeKey) {
+      throw new Error("STRIPE_SECRET_KEY not found in environment");
     }
 
-    // Validate environment variables first
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Missing Supabase configuration");
+    // Parse body
+    const body = await req.json();
+    console.log("[CREATE-CHECKOUT] Request body:", body);
+    
+    const { planType } = body;
+    if (!planType) {
+      throw new Error("planType is required");
     }
 
-    if (!stripeSecretKey) {
-      throw new Error("Missing Stripe configuration");
-    }
-
-    logStep("Environment variables validated");
-
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
-    logStep("Processing POST request");
-
-    // Parse request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      logStep("Request body parsed", { body: requestBody });
-    } catch (e) {
-      throw new Error("Invalid JSON in request body");
-    }
-
-    const { planType } = requestBody;
-    if (!planType || !["pro", "enterprise"].includes(planType)) {
-      throw new Error("Invalid plan type");
-    }
-
-    // Authenticate user
+    // Get user from auth header
     const authHeader = req.headers.get("Authorization");
+    console.log("[CREATE-CHECKOUT] Auth header exists:", !!authHeader);
+    
     if (!authHeader) {
-      throw new Error("No authorization header");
+      throw new Error("Authorization header missing");
     }
+
+    // Create Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
 
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user");
+    const { data, error } = await supabaseClient.auth.getUser(token);
     
-    const { data, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError) {
-      throw new Error(`Authentication error: ${authError.message}`);
+    if (error) {
+      console.log("[CREATE-CHECKOUT] Auth error:", error);
+      throw new Error(`Authentication failed: ${error.message}`);
     }
-    
+
     const user = data.user;
     if (!user?.email) {
-      throw new Error("User not authenticated or email not available");
+      throw new Error("User not found or email missing");
     }
-    logStep("User authenticated", { userId: user.id, email: user.email });
+
+    console.log("[CREATE-CHECKOUT] User authenticated:", user.email);
 
     // Initialize Stripe
-    const stripe = new Stripe(stripeSecretKey, { 
-      apiVersion: "2023-10-16" 
-    });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    console.log("[CREATE-CHECKOUT] Stripe initialized");
 
-    // Check for existing customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Find or create customer
+    const customers = await stripe.customers.list({ 
+      email: user.email, 
+      limit: 1 
+    });
+    
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Found existing customer", { customerId });
+      console.log("[CREATE-CHECKOUT] Found existing customer:", customerId);
+    } else {
+      console.log("[CREATE-CHECKOUT] No existing customer found");
     }
 
-    // Define plan details
-    const planDetails = {
-      pro: {
-        priceId: "price_1Rw1amDvlKsOk1LY38WQbjmm",
-        name: "Pro Plan",
-        amount: 2990
-      },
-      enterprise: {
-        priceId: "price_1Rw1bQDvlKsOk1LYs1yogWsv", 
-        name: "Enterprise Plan",
-        amount: 12990
-      }
+    // Plan configuration
+    const planConfig = {
+      pro: "price_1Rw1amDvlKsOk1LY38WQbjmm",
+      enterprise: "price_1Rw1bQDvlKsOk1LYs1yogWsv"
     };
 
-    const selectedPlan = planDetails[planType as keyof typeof planDetails];
-    logStep("Creating checkout session", { plan: selectedPlan });
-    
+    const priceId = planConfig[planType as keyof typeof planConfig];
+    if (!priceId) {
+      throw new Error(`Invalid plan type: ${planType}`);
+    }
+
+    console.log("[CREATE-CHECKOUT] Creating session with price:", priceId);
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price: selectedPlan.priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{
+        price: priceId,
+        quantity: 1,
+      }],
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/perfil?success=true`,
       cancel_url: `${req.headers.get("origin")}/perfil?canceled=true`,
@@ -131,7 +118,8 @@ serve(async (req) => {
       }
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    console.log("[CREATE-CHECKOUT] Session created:", session.id);
+    console.log("[CREATE-CHECKOUT] Checkout URL:", session.url);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -139,10 +127,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-checkout", { message: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+    console.error("[CREATE-CHECKOUT] ERROR:", error);
     
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : String(error) 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
