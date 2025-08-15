@@ -3,17 +3,19 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Origin": "https://c834b204-9da6-4c90-9317-fd953bd37e70.lovableproject.com",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Credentials": "true",
 };
 
 serve(async (req) => {
   console.log(`[CREATE-CHECKOUT] REQUEST: ${req.method} ${req.url}`);
+  console.log(`[CREATE-CHECKOUT] Origin: ${req.headers.get("origin")}`);
   
-  // Handle CORS preflight
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    console.log("[CREATE-CHECKOUT] Handling OPTIONS request");
+    console.log("[CREATE-CHECKOUT] Handling OPTIONS preflight request");
     return new Response(null, { 
       status: 200,
       headers: corsHeaders 
