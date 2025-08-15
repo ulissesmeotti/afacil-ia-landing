@@ -15,8 +15,23 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        setIsLoading(false);
+      }
+    };
+
+    getInitialSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
+        console.log('Auth state changed:', event, newSession);
         setSession(newSession);
         setIsLoading(false);
         if (!newSession && event === "SIGNED_OUT") {
