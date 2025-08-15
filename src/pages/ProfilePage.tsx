@@ -104,7 +104,7 @@ const ProfilePage = () => {
     setIsProcessing(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: { planType }
       });
       
