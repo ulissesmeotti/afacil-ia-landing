@@ -13,6 +13,8 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Force new deployment - Version 2.0
+
 serve(async (req) => {
   // Always ensure CORS headers are returned
   try {
