@@ -93,8 +93,6 @@ export default function usePlanLimits(userId?: string | null) {
     await fetchProfile();
   };
 
-  const canUseAI = !isLoading && canCreate("ai");
-
   return {
     profile,
     isLoading,
@@ -103,6 +101,5 @@ export default function usePlanLimits(userId?: string | null) {
     canCreate,
     incrementUsage,
     refresh,
-    canUseAI, // <- Nova flag
   };
 }

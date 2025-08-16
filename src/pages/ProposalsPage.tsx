@@ -4,7 +4,7 @@ import Header from "@/components/ui/header";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { useAuth } from "@/providers/auth-provider";
 import { Brain, FileText, ListTodo } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"; // Adicione este import
 
 const ProposalsPage = () => {
   const { session } = useAuth();
