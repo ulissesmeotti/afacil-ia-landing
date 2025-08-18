@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // @ts-ignore
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,68 +20,74 @@ serve(async (req) => {
     
     console.log('Gerando proposta com prompt:', prompt, 'estilo:', style);
 
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY não configurada');
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY não configurada');
     }
 
-    const systemPrompt = `Você é um assistente especializado em gerar orçamentos profissionais detalhados.
-    
-    Com base na descrição do serviço fornecida pelo usuário, gere um orçamento completo em formato JSON com os seguintes campos:
-    
-    - companyName: Nome da empresa (sugestão baseada no serviço)
-    - companyNumber: Telefone da empresa (formato brasileiro)
-    - companyCnpj: CNPJ da empresa (formato brasileiro válido)
-    - companyEmail: Email da empresa
-    - clientName: Nome do cliente (sugestão genérica)
-    - clientNumber: Telefone do cliente (formato brasileiro)
-    - clientLocation: Localização do cliente (cidade/estado)
-    - title: Título do orçamento (baseado no serviço)
-    - lineItems: Array de itens do orçamento, cada item com:
-      - description: Descrição detalhada do item/serviço
-      - quantity: Quantidade
-      - price: Preço unitário em reais
-    - deadline: Prazo de entrega (ex: "30 dias úteis")
-    - observations: Observações importantes do orçamento
-    - paymentTerms: Condições de pagamento (ex: "50% antecipado, 50% na entrega")
+    const systemInstruction = {
+      role: "user",
+      parts: [{
+        text: `Você é um assistente de orçamentos. Sua tarefa é criar um orçamento profissional em formato JSON com base na descrição fornecida. Inclua o nome da empresa, nome do cliente, título do orçamento e uma lista de itens com descrição, quantidade e preço unitário. O estilo do orçamento deve ser ${style}. A resposta deve ser APENAS o JSON, sem texto explicativo antes ou depois. Adicione também os campos "deadline", "observations" e "paymentTerms".
 
-    Seja específico e realista com preços de mercado brasileiro. O estilo deve ser ${style === 'profissional' ? 'formal e profissional' : 'mais casual'}.
-    
-    Responda APENAS com um JSON válido, sem texto adicional.`;
+        Exemplo de formato JSON:
+        {
+          "companyName": "Nome da Empresa",
+          "companyNumber": "Telefone da empresa (formato brasileiro)",
+          "companyCnpj": "CNPJ da empresa (formato brasileiro válido)",
+          "companyEmail": "Email da empresa",
+          "clientName": "Nome do Cliente",
+          "clientNumber": "Telefone do cliente (formato brasileiro)",
+          "clientLocation": "Localização do cliente (cidade/estado)",
+          "title": "Título do Orçamento",
+          "lineItems": [
+            {"description": "Item 1", "quantity": 1, "price": 100.00},
+            {"description": "Item 2", "quantity": 2, "price": 50.00}
+          ],
+          "deadline": "15 dias úteis",
+          "observations": "Validade da proposta de 30 dias.",
+          "paymentTerms": "50% de entrada, 50% na conclusão."
+        }
+        `
+      }]
+    };
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        max_completion_tokens: 2000,
-      }),
-    });
+    const userPrompt = {
+      role: "user",
+      parts: [{ text: prompt }]
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erro da OpenAI API:', errorText);
-      throw new Error(`Erro da OpenAI API: ${response.status} - ${errorText}`);
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [systemInstruction, userPrompt],
+        }),
+      }
+    );
+
+    if (!geminiResponse.ok) {
+      const errorData = await geminiResponse.json();
+      console.error("Gemini API error:", errorData);
+      throw new Error(`Erro da Gemini API: ${geminiResponse.status} - ${errorData.error?.message || 'Erro desconhecido'}`);
     }
 
-    const data = await response.json();
-    console.log('Resposta da OpenAI:', data);
+    const data = await geminiResponse.json();
+    console.log('Resposta da Gemini:', data);
     
-    const generatedText = data.choices[0].message.content;
+    const responseText = data.candidates[0].content.parts[0].text;
     
-    // Parse do JSON gerado pela IA
+    const jsonMatch = responseText.match(/```json\n([\s\S]*)\n```/);
+    const jsonContent = jsonMatch ? jsonMatch[1] : responseText;
+    
     let proposalData;
     try {
-      proposalData = JSON.parse(generatedText);
+      proposalData = JSON.parse(jsonContent);
     } catch (parseError) {
-      console.error('Erro ao fazer parse do JSON:', parseError);
-      console.log('Texto gerado:', generatedText);
+      console.error("Erro ao fazer parse do JSON:", jsonContent);
       throw new Error('Erro ao processar resposta da IA');
     }
 
