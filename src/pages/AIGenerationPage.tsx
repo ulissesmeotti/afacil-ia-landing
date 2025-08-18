@@ -73,19 +73,13 @@ const AIGenerationPage = () => {
     setIsEditing(false);
 
     try {
-      const response = await fetch("http://localhost:3001/generate-proposal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt, style: aiStyle }),
+      const { data, error } = await supabase.functions.invoke('generate-proposal', {
+        body: { prompt, style: aiStyle }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message || 'Erro ao chamar função de geração');
       }
-
-      const data = await response.json();
       setCompanyName(data.companyName || "");
       setCompanyNumber(data.companyNumber || "");
       setCompanyCnpj(data.companyCnpj || "");
