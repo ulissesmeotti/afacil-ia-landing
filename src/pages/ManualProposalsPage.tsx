@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import usePlanLimits from "@/hooks/usePlanLimits";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 import html2canvas from "html2canvas";
@@ -89,14 +89,14 @@ const ManualProposalsPage = () => {
     const newProposal = {
       user_id: session.user.id,
       company_name: companyName,
-      company_number: companyNumber,
+      company_number: companyNumber ? parseFloat(companyNumber) : null,
       company_cnpj: companyCnpj,
       company_email: companyEmail,
       client_name: clientName,
-      client_number: clientNumber,
+      client_number: clientNumber ? parseFloat(clientNumber) : null,
       client_location: clientLocation,
       title: proposalTitle,
-      line_items: lineItems,
+      line_items: JSON.stringify(lineItems),
       deadline,
       observations,
       payment_terms: paymentTerms,

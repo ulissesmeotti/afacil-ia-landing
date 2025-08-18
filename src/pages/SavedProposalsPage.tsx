@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { FileText, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -19,7 +19,7 @@ interface Proposal {
   client_name: string;
   created_at: string;
   total: number;
-  line_items: LineItem[];
+  line_items: string;
 }
 
 const SavedProposalsPage = () => {

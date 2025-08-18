@@ -1,5 +1,5 @@
 // src/hooks/usePlanLimits.ts
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useCallback, useEffect, useState } from "react";
 
 type PlanKey = "gratuito" | "pro" | "enterprise";
