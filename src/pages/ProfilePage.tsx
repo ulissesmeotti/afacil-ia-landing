@@ -1,13 +1,13 @@
-// src/pages/ProfilePage.tsx
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
-import { ArrowLeft, Check } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { ArrowLeft, Check, Crown, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 const plans = {
@@ -38,7 +38,19 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [searchParams] = useSearchParams();
   const { session } = useAuth();
+  const { subscription, isLoading: subscriptionLoading, isCreatingCheckout, checkSubscription, createCheckout, manageSubscription } = useSubscription();
+
+  // Check if user just returned from successful payment
+  useEffect(() => {
+    if (searchParams.get('success')) {
+      toast.success("Pagamento realizado! Sua assinatura foi ativada com sucesso.");
+      checkSubscription();
+    } else if (searchParams.get('cancelled')) {
+      toast.error("Pagamento cancelado. O processo de pagamento foi cancelado.");
+    }
+  }, [searchParams, checkSubscription]);
 
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -74,32 +86,40 @@ const ProfilePage = () => {
     fetchProfile();
   }, [session]);
   
-  const handleUpdatePlan = async (planType) => {
-    if (!session) {
-      toast.error("Você precisa estar logado para mudar de plano.");
-      return;
-    }
+  const handlePlanAction = async (planType) => {
+    if (!session?.user?.id) return;
 
-    setIsUpdating(true);
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ plan_type: planType })
-      .eq('id', session.user.id)
-      .select('*')
-      .single();
+    if (planType === 'gratuito') {
+      // For free plan, just update in database
+      setIsUpdating(true);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ plan_type: planType })
+          .eq('id', session.user.id);
 
-    if (error) {
-      toast.error("Erro ao atualizar o plano. Tente novamente.");
-      console.error("Supabase error:", error);
+        if (error) {
+          toast.error("Erro ao atualizar plano.");
+        } else {
+          toast.success("Plano atualizado para gratuito!");
+          fetchProfile();
+        }
+      } catch (error) {
+        toast.error("Erro ao atualizar plano.");
+      } finally {
+        setIsUpdating(false);
+      }
     } else {
-      setProfile(data);
-      toast.success(`Plano atualizado para "${planType}" com sucesso!`);
+      // For paid plans, redirect to Stripe checkout
+      const priceId = planType === 'pro' 
+        ? 'price_1RwX5rRbGgmNCJQtWCcTETGW' 
+        : 'price_1RwX66RbGgmNCJQtRpLEESUE';
+      
+      await createCheckout(priceId);
     }
-    setIsUpdating(false);
   };
   
-  if (isLoading) {
+  if (isLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Carregando perfil...</p>
@@ -107,7 +127,10 @@ const ProfilePage = () => {
     );
   }
 
-  const currentPlan = profile?.plan_type;
+  // Determine current plan based on subscription or profile
+  const currentPlan = subscription.subscribed && subscription.subscription_tier 
+    ? subscription.subscription_tier 
+    : profile?.plan_type || 'gratuito';
   const planDetails = plans[currentPlan];
 
   return (
@@ -126,43 +149,78 @@ const ProfilePage = () => {
 
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Plano Atual: <span className="text-primary">{planDetails?.name}</span></CardTitle>
+              <CardTitle>Plano Atual: <span className="text-primary capitalize">{planDetails?.name}</span></CardTitle>
               <CardDescription>
                 {profile?.email}
+                {subscription.subscribed && subscription.subscription_end && (
+                  <span className="block text-xs mt-1">
+                    Renovação: {new Date(subscription.subscription_end).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p>Uso de Orçamentos Manuais: <span className="font-semibold">{profile?.manual_usage_count || 0} / {planDetails?.manualLimit === Infinity ? "Ilimitado" : planDetails?.manualLimit}</span></p>
               <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count || 0} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
+              {subscription.subscribed && (
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={manageSubscription}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Gerenciar Assinatura no Stripe
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <h2 className="text-2xl font-bold mb-4 text-center">Planos Disponíveis</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {Object.entries(plans).map(([key, plan]) => (
-              <Card key={key} className={cn("text-center", { "border-primary-glow border-2 shadow-lg": key === currentPlan })}>
-                <CardHeader>
-                  <CardTitle>{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <h3 className="text-3xl font-bold mt-2">{plan.price}</h3>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.manualLimit === Infinity ? "Criação Manual Ilimitada" : `${plan.manualLimit} Orçamentos Manuais`}</p>
-                  <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.aiLimit === Infinity ? "Criação com IA Ilimitada" : `${plan.aiLimit} Orçamentos com IA`}</p>
-                  {currentPlan === key ? (
-                    <Button disabled className="w-full mt-4">Plano Atual</Button>
-                  ) : (
+            {Object.entries(plans).map(([key, plan]) => {
+              const isCurrentPlan = currentPlan === key;
+              const isSubscribedPlan = subscription.subscribed && subscription.subscription_tier === key;
+              
+              return (
+                <Card key={key} className={cn("text-center relative", { "border-primary-glow border-2 shadow-lg": isCurrentPlan })}>
+                  {isCurrentPlan && (
+                    <div className="absolute -top-2 left-4 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                      {key === 'enterprise' && <Crown className="h-3 w-3" />}
+                      {key === 'pro' && <Zap className="h-3 w-3" />}
+                      Seu Plano
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-center gap-2">
+                      {key === 'enterprise' && <Crown className="h-5 w-5 text-yellow-500" />}
+                      {key === 'pro' && <Zap className="h-5 w-5 text-blue-500" />}
+                      {plan.name}
+                    </CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                    <h3 className="text-3xl font-bold mt-2">{plan.price}</h3>
+                    {key !== 'gratuito' && (
+                      <div className="text-sm text-muted-foreground">por mês</div>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.manualLimit === Infinity ? "Criação Manual Ilimitada" : `${plan.manualLimit} Orçamentos Manuais`}</p>
+                    <p className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> {plan.aiLimit === Infinity ? "Criação com IA Ilimitada" : `${plan.aiLimit} Orçamentos com IA`}</p>
                     <Button 
                       className="w-full mt-4" 
-                      onClick={() => handleUpdatePlan(key)}
-                      disabled={isUpdating}
+                      onClick={() => handlePlanAction(key)}
+                      disabled={isUpdating || isCreatingCheckout || isCurrentPlan}
+                      variant={isCurrentPlan ? "secondary" : "default"}
                     >
-                      {isUpdating ? "Atualizando..." : "Selecionar Plano"}
+                      {isCreatingCheckout ? "Processando..." :
+                       isCurrentPlan ? "Plano Atual" :
+                       key === 'gratuito' ? "Downgrade" : 
+                       isSubscribedPlan ? "Atual no Stripe" : "Assinar Agora"}
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>
