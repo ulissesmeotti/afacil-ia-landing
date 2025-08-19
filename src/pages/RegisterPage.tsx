@@ -60,7 +60,7 @@ const RegisterPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-12 px-4 bg-background/50 border-border/50 focus:border-secondary/50 focus:bg-background transition-all"
+                className="h-11 px-4 bg-background/50 border-border/50 focus:border-secondary/50 focus:bg-background transition-all"
               />
             </div>
             <div className="grid gap-3">
@@ -72,12 +72,12 @@ const RegisterPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-12 px-4 bg-background/50 border-border/50 focus:border-secondary/50 focus:bg-background transition-all"
+                className="h-11 px-4 bg-background/50 border-border/50 focus:border-secondary/50 focus:bg-background transition-all"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full h-12 bg-gradient-to-r from-secondary to-secondary/80 hover:shadow-elegant transition-all duration-300 font-semibold text-secondary-foreground" 
+              className="w-full h-11 bg-gradient-to-r from-secondary to-secondary/80 hover:shadow-elegant transition-all duration-300 font-semibold text-secondary-foreground" 
               disabled={isLoading}
             >
               {isLoading ? (
