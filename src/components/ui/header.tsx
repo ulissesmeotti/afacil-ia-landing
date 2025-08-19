@@ -9,11 +9,23 @@ const Header = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Erro ao sair.");
-      console.error("Supabase logout error:", error);
-    } else {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      // Se o erro for de sessão não encontrada, consideramos como logout bem-sucedido
+      if (error && error.message !== "Session from session_id claim in JWT does not exist" && !error.message.includes("Auth session missing")) {
+        toast.error("Erro ao sair.");
+        console.error("Supabase logout error:", error);
+      } else {
+        // Limpar o localStorage como fallback
+        localStorage.removeItem('supabase.auth.token');
+        toast.success("Você saiu com sucesso!");
+        navigate("/login");
+      }
+    } catch (err) {
+      // Para qualquer outro erro, apenas limpar e redirecionar
+      console.log("Logout error handled:", err);
+      localStorage.removeItem('supabase.auth.token');
       toast.success("Você saiu com sucesso!");
       navigate("/login");
     }
