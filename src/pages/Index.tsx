@@ -170,9 +170,9 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="hover:shadow-lg transition-all duration-300">
               <CardHeader>
-                <CardTitle className="text-center">Starter</CardTitle>
+                <CardTitle className="text-center">Gratuito</CardTitle>
                 <div className="text-center">
-                  <span className="text-3xl font-bold">R$ 29</span>
+                  <span className="text-3xl font-bold">R$ 0</span>
                   <span className="text-muted-foreground">/mês</span>
                 </div>
                 <CardDescription className="text-center">
@@ -205,9 +205,9 @@ const Index = () => {
                 <Badge className="bg-primary text-primary-foreground">Mais Popular</Badge>
               </div>
               <CardHeader>
-                <CardTitle className="text-center">Professional</CardTitle>
+                <CardTitle className="text-center">Pro</CardTitle>
                 <div className="text-center">
-                  <span className="text-3xl font-bold">R$ 79</span>
+                  <span className="text-3xl font-bold">R$ 29,90</span>
                   <span className="text-muted-foreground">/mês</span>
                 </div>
                 <CardDescription className="text-center">
@@ -243,7 +243,7 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="text-center">Enterprise</CardTitle>
                 <div className="text-center">
-                  <span className="text-3xl font-bold">R$ 199</span>
+                  <span className="text-3xl font-bold">R$ 129,90</span>
                   <span className="text-muted-foreground">/mês</span>
                 </div>
                 <CardDescription className="text-center">
