@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthErrorMessage, getSuccessMessage } from "@/lib/auth-messages";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -14,6 +15,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -66,15 +68,30 @@ const LoginPage = () => {
             </div>
             <div className="grid gap-3">
               <Label htmlFor="password" className="text-sm font-semibold">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-11 px-4 bg-background/50 border-border/50 focus:border-primary/50 focus:bg-background transition-all"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Digite sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="h-11 px-4 pr-10 bg-background/50 border-border/50 focus:border-primary/50 focus:bg-background transition-all"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-11 px-3 py-0 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
             <Button 
               type="submit" 
