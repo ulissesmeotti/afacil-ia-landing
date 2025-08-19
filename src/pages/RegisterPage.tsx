@@ -12,12 +12,14 @@ const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(""); // Limpa erro anterior
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -25,11 +27,7 @@ const RegisterPage = () => {
     });
 
     if (error) {
-      toast({
-        title: "Erro ao criar conta",
-        description: getAuthErrorMessage(error.message),
-        variant: "destructive",
-      });
+      setError(getAuthErrorMessage(error.message));
     } else {
       await supabase.from('profiles').insert({ id: data.user.id, email: data.user.email, plan_type: 'gratuito' });
       const successMsg = getSuccessMessage('register');
@@ -91,6 +89,13 @@ const RegisterPage = () => {
                 "Criar conta gratuita"
               )}
             </Button>
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive font-medium">
+                  {error}
+                </p>
+              </div>
+            )}
           </form>
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
