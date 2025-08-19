@@ -42,13 +42,19 @@ const ProfilePage = () => {
   const { session } = useAuth();
   const { subscription, isLoading: subscriptionLoading, isCreatingCheckout, checkSubscription, createCheckout, manageSubscription } = useSubscription();
 
-  // Check if user just returned from successful payment
+  // Check if user just returned from successful payment or Stripe portal
   useEffect(() => {
     if (searchParams.get('success')) {
       toast.success("Pagamento realizado! Sua assinatura foi ativada com sucesso.");
       checkSubscription();
     } else if (searchParams.get('cancelled')) {
       toast.error("Pagamento cancelado. O processo de pagamento foi cancelado.");
+    } else if (searchParams.get('stripe_portal')) {
+      toast.info("Verificando alterações na assinatura...");
+      // Wait a bit for Stripe to process changes then refresh
+      setTimeout(() => {
+        checkSubscription();
+      }, 1000);
     }
   }, [searchParams, checkSubscription]);
 
@@ -163,13 +169,28 @@ const ProfilePage = () => {
               <p>Uso de Orçamentos Manuais: <span className="font-semibold">{profile?.manual_usage_count || 0} / {planDetails?.manualLimit === Infinity ? "Ilimitado" : planDetails?.manualLimit}</span></p>
               <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count || 0} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
               {subscription.subscribed && (
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t space-y-2">
                   <Button 
                     onClick={manageSubscription}
                     variant="outline"
                     className="w-full"
                   >
                     Gerenciar Assinatura no Stripe
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    No portal do Stripe você pode cancelar, pausar ou alterar sua assinatura
+                  </p>
+                </div>
+              )}
+              {!subscription.subscribed && currentPlan !== 'gratuito' && (
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={() => handlePlanAction('gratuito')}
+                    variant="outline" 
+                    className="w-full"
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? "Cancelando..." : "Cancelar Plano Atual"}
                   </Button>
                 </div>
               )}
