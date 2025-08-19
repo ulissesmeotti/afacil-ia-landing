@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthErrorMessage, getSuccessMessage } from "@/lib/auth-messages";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -25,15 +26,16 @@ const RegisterPage = () => {
 
     if (error) {
       toast({
-        title: "Erro no Cadastro",
-        description: error.message,
+        title: "Erro ao criar conta",
+        description: getAuthErrorMessage(error.message),
         variant: "destructive",
       });
     } else {
       await supabase.from('profiles').insert({ id: data.user.id, email: data.user.email, plan_type: 'gratuito' });
+      const successMsg = getSuccessMessage('register');
       toast({
-        title: "Cadastro bem-sucedido!",
-        description: "Você será redirecionado para a página de orçamentos.",
+        title: successMsg.title,
+        description: successMsg.description,
       });
       navigate("/propostas");
     }

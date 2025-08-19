@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthErrorMessage, getSuccessMessage } from "@/lib/auth-messages";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -26,14 +27,15 @@ const LoginPage = () => {
 
     if (error) {
       toast({
-        title: "Erro de Login",
-        description: error.message,
+        title: "Erro ao fazer login",
+        description: getAuthErrorMessage(error.message),
         variant: "destructive",
       });
     } else {
+      const successMsg = getSuccessMessage('login');
       toast({
-        title: "Login bem-sucedido!",
-        description: "Você será redirecionado em instantes.",
+        title: successMsg.title,
+        description: successMsg.description,
       });
       navigate("/propostas");
     }
