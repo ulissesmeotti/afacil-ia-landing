@@ -98,14 +98,22 @@ const LoginPage = () => {
               </div>
             )}
           </form>
-          <div className="mt-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Não tem uma conta?{" "}
-              <Link to="/register" className="font-semibold text-primary hover:text-primary-glow transition-colors">
-                Cadastre-se aqui
+            <div className="mt-8 text-center space-y-3">
+              <Link 
+                to="/forgot-password" 
+                className="inline-block text-sm font-medium text-primary hover:text-primary-glow transition-colors"
+              >
+                Esqueceu sua senha?
               </Link>
-            </p>
-          </div>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Não tem uma conta?{" "}
+                <Link to="/register" className="font-semibold text-primary hover:text-primary-glow transition-colors">
+                  Cadastre-se aqui
+                </Link>
+              </p>
+            </div>
         </CardContent>
       </Card>
     </div>
