@@ -90,6 +90,88 @@ const ProposalsPage = () => {
             </Button>
           </Link>
         </div>
+
+        {/* Como funciona */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Como funciona</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-primary font-bold text-lg">1</span>
+              </div>
+              <h3 className="font-semibold mb-2">Escolha o método</h3>
+              <p className="text-muted-foreground text-sm">Selecione entre geração automática com IA ou criação manual com templates</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-primary font-bold text-lg">2</span>
+              </div>
+              <h3 className="font-semibold mb-2">Preencha os dados</h3>
+              <p className="text-muted-foreground text-sm">Insira as informações do seu projeto e cliente de forma simples e rápida</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-primary font-bold text-lg">3</span>
+              </div>
+              <h3 className="font-semibold mb-2">Baixe o orçamento</h3>
+              <p className="text-muted-foreground text-sm">Revise, edite se necessário e baixe em PDF profissional</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Principais benefícios */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Principais benefícios</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-green-600 font-bold">⚡</span>
+              </div>
+              <h3 className="font-semibold mb-2">Rapidez</h3>
+              <p className="text-muted-foreground text-sm">Crie orçamentos profissionais em minutos</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-blue-600 font-bold">✨</span>
+              </div>
+              <h3 className="font-semibold mb-2">Profissional</h3>
+              <p className="text-muted-foreground text-sm">Templates modernos e personalizáveis</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-purple-600 font-bold">🤖</span>
+              </div>
+              <h3 className="font-semibold mb-2">Inteligente</h3>
+              <p className="text-muted-foreground text-sm">IA que entende seu negócio</p>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-orange-600 font-bold">💾</span>
+              </div>
+              <h3 className="font-semibold mb-2">Organizado</h3>
+              <p className="text-muted-foreground text-sm">Salve e gerencie todos seus orçamentos</p>
+            </Card>
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Perguntas frequentes</h2>
+          <div className="max-w-3xl mx-auto space-y-4">
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">Como funciona a geração com IA?</h3>
+              <p className="text-muted-foreground text-sm">Nossa IA analisa as informações do seu projeto e gera automaticamente um orçamento detalhado e profissional, incluindo descrições dos serviços e valores sugeridos.</p>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">Posso editar o orçamento depois de criado?</h3>
+              <p className="text-muted-foreground text-sm">Sim! Você pode editar qualquer informação do orçamento antes de salvá-lo ou baixá-lo em PDF. Tudo é personalizável.</p>
+            </Card>
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">Os orçamentos ficam salvos na nuvem?</h3>
+              <p className="text-muted-foreground text-sm">Sim, todos os seus orçamentos ficam salvos na sua conta e podem ser acessados de qualquer dispositivo.</p>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
