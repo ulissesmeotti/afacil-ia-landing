@@ -20,6 +20,7 @@ interface Proposal {
   created_at: string;
   total: number;
   line_items: string;
+  creation_type: 'ai' | 'manual';
 }
 
 const SavedProposalsPage = () => {
@@ -68,6 +69,31 @@ const SavedProposalsPage = () => {
     }
   };
 
+  const aiProposals = proposals.filter(proposal => proposal.creation_type === 'ai');
+  const manualProposals = proposals.filter(proposal => proposal.creation_type === 'manual');
+
+  const ProposalCard = ({ proposal }: { proposal: Proposal }) => (
+    <Card key={proposal.id}>
+      <CardHeader>
+        <CardTitle>{proposal.title}</CardTitle>
+        <CardDescription>Cliente: {proposal.client_name}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex justify-between items-center">
+        <div className="text-lg font-semibold">
+          R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
+        </div>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <Link to={`/propostas/${proposal.id}`}>
+            <Button size="sm">Ver Detalhes</Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -91,34 +117,71 @@ const SavedProposalsPage = () => {
               <FileText className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-xl font-semibold mb-2">Nenhum orçamento encontrado.</p>
               <p className="text-muted-foreground mb-4">Crie um novo orçamento para começar!</p>
-              <Link to="/propostas/manual">
-                <Button>Criar Orçamento Manual</Button>
-              </Link>
+              <div className="flex gap-4 justify-center">
+                <Link to="/propostas/manual">
+                  <Button>Criar Orçamento Manual</Button>
+                </Link>
+                <Link to="/propostas/ai">
+                  <Button variant="outline">Criar com IA</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {proposals.map((proposal) => (
-              <Card key={proposal.id}>
-                <CardHeader>
-                  <CardTitle>{proposal.title}</CardTitle>
-                  <CardDescription>Cliente: {proposal.client_name}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-between items-center">
-                  <div className="text-lg font-semibold">
-                    R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <Link to={`/propostas/${proposal.id}`}>
-                      <Button size="sm">Ver Detalhes</Button>
+          <div className="space-y-8">
+            {/* Orçamentos com IA */}
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-2xl font-semibold">Orçamentos com IA</h2>
+                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                  {aiProposals.length} orçamentos
+                </div>
+              </div>
+              
+              {aiProposals.length === 0 ? (
+                <Card className="text-center p-6 border-dashed">
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">Nenhum orçamento criado com IA ainda.</p>
+                    <Link to="/propostas/ai">
+                      <Button variant="outline">Criar Orçamento com IA</Button>
                     </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {aiProposals.map((proposal) => (
+                    <ProposalCard key={proposal.id} proposal={proposal} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Orçamentos Manuais */}
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-2xl font-semibold">Orçamentos Manuais</h2>
+                <div className="bg-secondary/10 text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                  {manualProposals.length} orçamentos
+                </div>
+              </div>
+              
+              {manualProposals.length === 0 ? (
+                <Card className="text-center p-6 border-dashed">
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">Nenhum orçamento manual criado ainda.</p>
+                    <Link to="/propostas/manual">
+                      <Button variant="outline">Criar Orçamento Manual</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {manualProposals.map((proposal) => (
+                    <ProposalCard key={proposal.id} proposal={proposal} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

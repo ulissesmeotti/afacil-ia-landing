@@ -101,6 +101,7 @@ const ManualProposalsPage = () => {
       observations,
       payment_terms: paymentTerms,
       total: calculateTotal,
+      creation_type: 'manual',
     };
 
     const { error } = await supabase.from("proposals").insert([newProposal]);

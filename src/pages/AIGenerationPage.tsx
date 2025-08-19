@@ -132,6 +132,7 @@ const AIGenerationPage = () => {
       observations,
       payment_terms: paymentTerms,
       total: calculateTotal,
+      creation_type: 'ai',
     };
 
     const { error } = await supabase.from("proposals").insert([newProposal]);
