@@ -59,7 +59,7 @@ const Index = () => {
           <div className="relative max-w-4xl mx-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl rounded-3xl"></div>
             <img 
-              src={heroDashboard} 
+              src="/lovable-uploads/ca2c2fbe-38b9-4fcd-94d2-2ecce94706c5.png" 
               alt="Dashboard do OrçaFacil IA" 
               className="relative rounded-2xl shadow-2xl w-full"
             />
