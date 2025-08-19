@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@/providers/auth-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import AIGenerationPage from "./pages/AIGenerationPage";
+import DemoPage from "./pages/DemoPage";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import ManualProposalsPage from "./pages/ManualProposalsPage";
@@ -36,6 +37,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/demo" element={<DemoPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

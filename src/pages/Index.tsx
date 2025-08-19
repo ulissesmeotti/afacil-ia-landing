@@ -51,9 +51,11 @@ const Index = () => {
                 Criar Primeiro Orçamento
               </Button>
             </Link>
-            <Button variant="outline" size="xl">
-              Ver Demonstração
-            </Button>
+            <Link to="/demo">
+              <Button variant="outline" size="xl">
+                Ver Demonstração
+              </Button>
+            </Link>
           </div>
 
           <div className="relative max-w-4xl mx-auto">
