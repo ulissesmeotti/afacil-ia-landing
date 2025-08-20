@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Header from "@/components/ui/header";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Trash2 } from "lucide-react";
+import usePlanLimits from "@/hooks/usePlanLimits";
+import { useAuth } from "@/providers/auth-provider";
+import { FileText, Trash2, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,6 +20,7 @@ interface Proposal {
   id: string;
   title: string;
   client_name: string;
+  company_name: string;
   created_at: string;
   total: number;
   line_items: string;
@@ -24,8 +28,14 @@ interface Proposal {
 }
 
 const SavedProposalsPage = () => {
+  const { session } = useAuth();
+  const userId = session?.user.id ?? null;
+  const { profile, planDetails } = usePlanLimits(userId);
+  
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const fetchProposals = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -72,6 +82,87 @@ const SavedProposalsPage = () => {
   const aiProposals = proposals.filter(proposal => proposal.creation_type === 'ai');
   const manualProposals = proposals.filter(proposal => proposal.creation_type === 'manual');
 
+  const handleViewProposal = (proposal: Proposal) => {
+    const userPlan = profile?.plan_type || 'gratuito';
+    
+    if (userPlan === 'enterprise') {
+      // Redireciona para edição
+      window.location.href = `/propostas/manual?id=${proposal.id}`;
+    } else {
+      // Abre modal de visualização
+      setSelectedProposal(proposal);
+      setIsViewModalOpen(true);
+    }
+  };
+
+  const renderProposalPreview = (proposal: Proposal) => {
+    if (!proposal.line_items) return null;
+    
+    let lineItems: LineItem[] = [];
+    try {
+      lineItems = JSON.parse(proposal.line_items);
+    } catch (error) {
+      console.error('Erro ao parsear line_items:', error);
+      return null;
+    }
+
+    return (
+      <div className="max-w-4xl mx-auto bg-white text-black p-8 rounded-lg">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">{proposal.title}</h1>
+          <div className="w-24 h-1 bg-blue-600 mx-auto rounded"></div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8 mb-8">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Dados da Empresa</h2>
+            <div className="space-y-2">
+              <p><span className="font-medium">Empresa:</span> {proposal.company_name || 'Não informado'}</p>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Dados do Cliente</h2>
+            <div className="space-y-2">
+              <p><span className="font-medium">Cliente:</span> {proposal.client_name}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Itens do Orçamento</h2>
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-4 py-2 text-left">Descrição</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Qtd</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">Valor Unit.</th>
+                <th className="border border-gray-300 px-4 py-2 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lineItems.map((item, index) => (
+                <tr key={index}>
+                  <td className="border border-gray-300 px-4 py-2">{item.description}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">{item.quantity}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">R$ {item.price.toFixed(2)}</td>
+                  <td className="border border-gray-300 px-4 py-2 text-right">
+                    R$ {(item.quantity * item.price).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div className="mt-4 text-right">
+            <div className="text-xl font-bold text-gray-800">
+              Total Geral: R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const ProposalCard = ({ proposal }: { proposal: Proposal }) => (
     <Card key={proposal.id}>
       <CardHeader>
@@ -83,6 +174,14 @@ const SavedProposalsPage = () => {
           R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => handleViewProposal(proposal)}
+            title={profile?.plan_type === 'enterprise' ? 'Editar orçamento' : 'Visualizar orçamento'}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -184,6 +283,16 @@ const SavedProposalsPage = () => {
             </div>
           </div>
         )}
+        
+        {/* Modal de Visualização */}
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Visualizar Orçamento</DialogTitle>
+            </DialogHeader>
+            {selectedProposal && renderProposalPreview(selectedProposal)}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
