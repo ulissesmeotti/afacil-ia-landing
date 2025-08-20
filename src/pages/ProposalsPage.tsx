@@ -43,8 +43,8 @@ const ProposalsPage = () => {
 
               {isAIBlocked ? (
                 <Button variant="hero" className="w-full" disabled>
-                  {profile?.plan_type === "gratuito"
-                    ? "Disponível apenas no plano Pro"
+                  {planDetails.aiLimit === 0
+                    ? "Disponível apenas nos planos Pro e Enterprise"
                     : "Limite de uso atingido"}
                 </Button>
               ) : (

@@ -1,6 +1,7 @@
 // src/hooks/usePlanLimits.ts
 import { supabase } from "@/integrations/supabase/client";
 import { useCallback, useEffect, useState } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type PlanKey = "gratuito" | "pro" | "enterprise";
 type UsageType = "manual" | "ai";
@@ -15,6 +16,7 @@ export default function usePlanLimits(userId?: string | null) {
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(!!userId);
   const [error, setError] = useState<string | null>(null);
+  const { subscription } = useSubscription();
 
   const fetchProfile = useCallback(async () => {
     if (!userId) {
@@ -45,7 +47,10 @@ export default function usePlanLimits(userId?: string | null) {
   }, [fetchProfile]);
 
   const planDetails = ((): { manualLimit: number; aiLimit: number } => {
-    const planType = (profile?.plan_type as PlanKey) || "gratuito";
+    // Use subscription info if user is subscribed, otherwise fall back to profile plan_type
+    const planType = (subscription.subscribed && subscription.subscription_tier 
+      ? subscription.subscription_tier 
+      : profile?.plan_type) as PlanKey || "gratuito";
     return plans[planType] ?? plans.gratuito;
   })();
 
