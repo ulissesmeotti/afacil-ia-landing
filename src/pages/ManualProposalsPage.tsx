@@ -96,13 +96,21 @@ const ManualProposalsPage = () => {
     text: '#000000',
     accent: '#f3f4f6'
   });
+  const [isSaved, setIsSaved] = useState(false);
 
   const proposalRef = useRef<HTMLDivElement | null>(null);
 
-  const addLineItem = () => setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
-  const removeLineItem = (index: number) => setLineItems(lineItems.filter((_, i) => i !== index));
+  const addLineItem = () => {
+    setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
+    setIsSaved(false);
+  };
+  const removeLineItem = (index: number) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+    setIsSaved(false);
+  };
   const handleLineItemChange = (index: number, field: keyof LineItem, value: any) => {
     setLineItems((prev) => prev.map((it, i) => (i === index ? { ...it, [field]: value } : it)));
+    setIsSaved(false);
   };
 
   const calculateTotal = useMemo(
@@ -123,6 +131,7 @@ const ManualProposalsPage = () => {
     setDeadline("");
     setObservations("");
     setPaymentTerms("");
+    setIsSaved(false);
   };
 
   const handleSave = async () => {
@@ -176,10 +185,15 @@ const ManualProposalsPage = () => {
     }
 
     toast.success("Orçamento salvo com sucesso!");
-    resetForm();
+    setIsSaved(true);
   };
 
   const handleDownloadPdf = () => {
+    if (!isSaved) {
+      toast.error("Você precisa salvar o orçamento antes de fazer o download.");
+      return;
+    }
+    
     if (proposalRef.current) {
       toast.info("Preparando download do PDF...");
       const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
@@ -221,6 +235,7 @@ const ManualProposalsPage = () => {
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId);
+    setIsSaved(false);
     if (templateId !== 'custom') {
       const template = templates.find(t => t.id === templateId);
       if (template) {
@@ -249,21 +264,21 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="companyName">Nome da Empresa</Label>
-                    <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                    <Input id="companyName" value={companyName} onChange={(e) => { setCompanyName(e.target.value); setIsSaved(false); }} />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="companyNumber">Seu Número</Label>
-                      <Input id="companyNumber" placeholder="(XX) XXXXX-XXXX" value={companyNumber} onChange={(e) => setCompanyNumber(e.target.value)} />
+                      <Input id="companyNumber" placeholder="(XX) XXXXX-XXXX" value={companyNumber} onChange={(e) => { setCompanyNumber(e.target.value); setIsSaved(false); }} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="companyCnpj">Seu CNPJ</Label>
-                      <Input id="companyCnpj" placeholder="XX.XXX.XXX/XXXX-XX" value={companyCnpj} onChange={(e) => setCompanyCnpj(e.target.value)} />
+                      <Input id="companyCnpj" placeholder="XX.XXX.XXX/XXXX-XX" value={companyCnpj} onChange={(e) => { setCompanyCnpj(e.target.value); setIsSaved(false); }} />
                     </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="companyEmail">Seu Email</Label>
-                    <Input id="companyEmail" type="email" placeholder="contato@orcafacil.com" value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} />
+                    <Input id="companyEmail" type="email" placeholder="contato@orcafacil.com" value={companyEmail} onChange={(e) => { setCompanyEmail(e.target.value); setIsSaved(false); }} />
                   </div>
                 </CardContent>
               </Card>
@@ -276,16 +291,16 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="clientName">Nome do Cliente</Label>
-                    <Input id="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                    <Input id="clientName" value={clientName} onChange={(e) => { setClientName(e.target.value); setIsSaved(false); }} />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="clientNumber">Número do Cliente</Label>
-                      <Input id="clientNumber" placeholder="(XX) XXXXX-XXXX" value={clientNumber} onChange={(e) => setClientNumber(e.target.value)} />
+                      <Input id="clientNumber" placeholder="(XX) XXXXX-XXXX" value={clientNumber} onChange={(e) => { setClientNumber(e.target.value); setIsSaved(false); }} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="clientLocation">Localização do Cliente</Label>
-                      <Input id="clientLocation" placeholder="Ex: São Paulo, SP" value={clientLocation} onChange={(e) => setClientLocation(e.target.value)} />
+                      <Input id="clientLocation" placeholder="Ex: São Paulo, SP" value={clientLocation} onChange={(e) => { setClientLocation(e.target.value); setIsSaved(false); }} />
                     </div>
                   </div>
                 </CardContent>
@@ -299,7 +314,7 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="proposalTitle">Título</Label>
-                    <Input id="proposalTitle" value={proposalTitle} onChange={(e) => setProposalTitle(e.target.value)} />
+                    <Input id="proposalTitle" value={proposalTitle} onChange={(e) => { setProposalTitle(e.target.value); setIsSaved(false); }} />
                   </div>
                   <div className="space-y-4">
                     <Label>Itens</Label>
@@ -351,15 +366,15 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="deadline">Prazo de Entrega</Label>
-                    <Input id="deadline" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+                    <Input id="deadline" value={deadline} onChange={(e) => { setDeadline(e.target.value); setIsSaved(false); }} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="paymentTerms">Condições de Pagamento</Label>
-                    <Input id="paymentTerms" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
+                    <Input id="paymentTerms" value={paymentTerms} onChange={(e) => { setPaymentTerms(e.target.value); setIsSaved(false); }} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="observations">Observações</Label>
-                    <Textarea id="observations" rows={4} value={observations} onChange={(e) => setObservations(e.target.value)} />
+                    <Textarea id="observations" rows={4} value={observations} onChange={(e) => { setObservations(e.target.value); setIsSaved(false); }} />
                   </div>
                 </CardContent>
               </Card>
@@ -396,12 +411,12 @@ const ManualProposalsPage = () => {
                             id="primaryColor"
                             type="color"
                             value={customColors.primary}
-                            onChange={(e) => setCustomColors({...customColors, primary: e.target.value})}
+                            onChange={(e) => { setCustomColors({...customColors, primary: e.target.value}); setIsSaved(false); }}
                             className="w-16 h-10 p-1 rounded"
                           />
                           <Input
                             value={customColors.primary}
-                            onChange={(e) => setCustomColors({...customColors, primary: e.target.value})}
+                            onChange={(e) => { setCustomColors({...customColors, primary: e.target.value}); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -409,16 +424,16 @@ const ManualProposalsPage = () => {
                       <div className="grid gap-2">
                         <Label htmlFor="backgroundColor">Cor de Fundo</Label>
                         <div className="flex gap-2">
+                           <Input
+                             id="backgroundColor"
+                             type="color"
+                             value={customColors.background}
+                             onChange={(e) => { setCustomColors({...customColors, background: e.target.value}); setIsSaved(false); }}
+                             className="w-16 h-10 p-1 rounded"
+                           />
                           <Input
-                            id="backgroundColor"
-                            type="color"
                             value={customColors.background}
-                            onChange={(e) => setCustomColors({...customColors, background: e.target.value})}
-                            className="w-16 h-10 p-1 rounded"
-                          />
-                          <Input
-                            value={customColors.background}
-                            onChange={(e) => setCustomColors({...customColors, background: e.target.value})}
+                            onChange={(e) => { setCustomColors({...customColors, background: e.target.value}); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -426,16 +441,16 @@ const ManualProposalsPage = () => {
                       <div className="grid gap-2">
                         <Label htmlFor="textColor">Cor do Texto</Label>
                         <div className="flex gap-2">
+                           <Input
+                             id="textColor"
+                             type="color"
+                             value={customColors.text}
+                             onChange={(e) => { setCustomColors({...customColors, text: e.target.value}); setIsSaved(false); }}
+                             className="w-16 h-10 p-1 rounded"
+                           />
                           <Input
-                            id="textColor"
-                            type="color"
                             value={customColors.text}
-                            onChange={(e) => setCustomColors({...customColors, text: e.target.value})}
-                            className="w-16 h-10 p-1 rounded"
-                          />
-                          <Input
-                            value={customColors.text}
-                            onChange={(e) => setCustomColors({...customColors, text: e.target.value})}
+                            onChange={(e) => { setCustomColors({...customColors, text: e.target.value}); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -443,16 +458,16 @@ const ManualProposalsPage = () => {
                       <div className="grid gap-2">
                         <Label htmlFor="accentColor">Cor de Destaque</Label>
                         <div className="flex gap-2">
+                           <Input
+                             id="accentColor"
+                             type="color"
+                             value={customColors.accent}
+                             onChange={(e) => { setCustomColors({...customColors, accent: e.target.value}); setIsSaved(false); }}
+                             className="w-16 h-10 p-1 rounded"
+                           />
                           <Input
-                            id="accentColor"
-                            type="color"
                             value={customColors.accent}
-                            onChange={(e) => setCustomColors({...customColors, accent: e.target.value})}
-                            className="w-16 h-10 p-1 rounded"
-                          />
-                          <Input
-                            value={customColors.accent}
-                            onChange={(e) => setCustomColors({...customColors, accent: e.target.value})}
+                            onChange={(e) => { setCustomColors({...customColors, accent: e.target.value}); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -466,7 +481,7 @@ const ManualProposalsPage = () => {
                   <Button onClick={handleSave} variant="secondary">
                       <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
                   </Button>
-                  <Button onClick={handleDownloadPdf}>
+                  <Button onClick={handleDownloadPdf} disabled={!isSaved}>
                       <Download className="h-4 w-4 mr-2" /> Baixar PDF
                   </Button>
               </div>
