@@ -1,7 +1,4 @@
-import demoStep1 from "@/assets/demo-step-1.jpg";
-import demoStep2 from "@/assets/demo-step-2.jpg";
-import demoStep3 from "@/assets/demo-step-3.jpg";
-import demoResults from "@/assets/demo-results.jpg";
+// Using the new images from user uploads
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,8 +90,8 @@ const DemoPage = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-2xl rounded-2xl"></div>
                   <img 
-                    src={demoStep1} 
-                    alt="Interface de criação de orçamento" 
+                    src="/lovable-uploads/b42eec16-0d5a-4f68-939c-cbca20c491c8.png" 
+                    alt="Interface de criação de orçamento manual" 
                     className="relative rounded-xl shadow-2xl w-full"
                   />
                 </div>
@@ -107,8 +104,8 @@ const DemoPage = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-secondary/20 to-primary/20 blur-2xl rounded-2xl"></div>
                   <img 
-                    src={demoStep2} 
-                    alt="IA processando e sugerindo itens" 
+                    src="/lovable-uploads/3feb3b0d-f184-4923-a2c3-6bb98cc02b39.png" 
+                    alt="Interface de geração com IA" 
                     className="relative rounded-xl shadow-2xl w-full"
                   />
                 </div>
@@ -181,8 +178,8 @@ const DemoPage = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-2xl rounded-2xl"></div>
                   <img 
-                    src={demoStep3} 
-                    alt="Orçamento profissional em PDF" 
+                    src="/lovable-uploads/fe3410e3-9d18-4e12-9674-005d91350172.png" 
+                    alt="Orçamento profissional gerado" 
                     className="relative rounded-xl shadow-2xl w-full"
                   />
                 </div>
@@ -207,8 +204,8 @@ const DemoPage = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
             <div>
               <img 
-                src={demoResults} 
-                alt="Dashboard com resultados e métricas" 
+                src="/lovable-uploads/fe3410e3-9d18-4e12-9674-005d91350172.png" 
+                alt="Resultado final - orçamento profissional" 
                 className="rounded-xl shadow-2xl w-full"
               />
             </div>
