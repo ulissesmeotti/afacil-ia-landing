@@ -177,24 +177,6 @@ const ProposalsPage = () => {
           </div>
         </div>
 
-        {/* FAQ */}
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Perguntas frequentes</h2>
-          <div className="max-w-3xl mx-auto space-y-4">
-            <Card className="p-6">
-              <h3 className="font-semibold mb-2">Como funciona a geração com IA?</h3>
-              <p className="text-muted-foreground text-sm">Nossa IA analisa as informações do seu projeto e gera automaticamente um orçamento detalhado e profissional, incluindo descrições dos serviços e valores sugeridos.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="font-semibold mb-2">Posso editar o orçamento depois de criado?</h3>
-              <p className="text-muted-foreground text-sm">Sim! Você pode editar qualquer informação do orçamento antes de salvá-lo ou baixá-lo em PDF. Tudo é personalizável.</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="font-semibold mb-2">Os orçamentos ficam salvos na nuvem?</h3>
-              <p className="text-muted-foreground text-sm">Sim, todos os seus orçamentos ficam salvos na sua conta e podem ser acessados de qualquer dispositivo.</p>
-            </Card>
-          </div>
-        </div>
       </div>
     </div>
   );

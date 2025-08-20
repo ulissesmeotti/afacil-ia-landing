@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Home, LogOut, User } from "lucide-react";
+import { FileText, Home, LogOut, User, HelpCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -48,6 +48,11 @@ const Header = () => {
           <Link to="/propostas/salvas">
             <Button variant="ghost" className="hidden md:flex">
               <FileText className="mr-2 h-4 w-4" /> Meus Orçamentos
+            </Button>
+          </Link>
+          <Link to="/faq">
+            <Button variant="ghost" className="hidden md:flex">
+              <HelpCircle className="mr-2 h-4 w-4" /> Ajuda
             </Button>
           </Link>
         </nav>
