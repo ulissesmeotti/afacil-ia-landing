@@ -204,8 +204,8 @@ const DemoPage = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
             <div>
               <img 
-                src="/lovable-uploads/fe3410e3-9d18-4e12-9674-005d91350172.png" 
-                alt="Resultado final - orçamento profissional" 
+                src="/lovable-uploads/1d2f25ab-03d8-49e1-a319-5b9750f444ec.png" 
+                alt="Dashboard com orçamentos gerados - IA e manuais" 
                 className="rounded-xl shadow-2xl w-full"
               />
             </div>
