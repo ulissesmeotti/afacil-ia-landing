@@ -2,9 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { getAuthErrorMessage, getSuccessMessage } from "@/lib/auth-messages";
+import { getAuthErrorMessage } from "@/lib/auth-messages";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -16,7 +15,6 @@ const RegisterPage = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +30,6 @@ const RegisterPage = () => {
       setError(getAuthErrorMessage(error.message));
     } else {
       await supabase.from('profiles').insert({ id: data.user.id, email: data.user.email, plan_type: 'gratuito' });
-      const successMsg = getSuccessMessage('register');
-      toast({
-        title: successMsg.title,
-        description: successMsg.description,
-      });
       navigate("/propostas");
     }
     setIsLoading(false);
