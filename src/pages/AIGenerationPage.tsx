@@ -165,11 +165,11 @@ const AIGenerationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8 md:p-12">
+    <div className="min-h-screen bg-background p-4 md:p-8 lg:p-12">
       <Header />
       <div className="container mx-auto max-w-7xl">
-        <div className="grid lg:grid-cols-2 gap-8 mt-8">
-          <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-6 md:mt-8">
+          <div className="space-y-6 md:space-y-8 order-2 lg:order-1">
             <Card>
               <CardHeader>
                 <CardTitle>Detalhes da Geração</CardTitle>
@@ -177,7 +177,7 @@ const AIGenerationPage = () => {
                   Preencha os dados e deixe a IA criar um orçamento para você.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid gap-2">
                   <Label htmlFor="companyName">Nome da Empresa</Label>
                   <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
@@ -219,34 +219,37 @@ const AIGenerationPage = () => {
                     <div className="space-y-4">
                       <Label>Itens</Label>
                       {lineItems.map((item, index) => (
-                        <div key={index} className="flex gap-2 items-end">
-                          <div className="flex-1">
+                        <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+                          <div className="flex-1 w-full">
                             <Label className="sr-only">Descrição</Label>
                             <Input
                               value={item.description}
                               onChange={(e) => handleLineItemChange(index, "description", e.target.value)}
+                              placeholder="Descrição do item"
                             />
                           </div>
-                          <div className="w-24">
+                          <div className="w-full sm:w-20">
                             <Label className="sr-only">Qtd.</Label>
                             <Input
                               type="number"
                               value={item.quantity}
                               onChange={(e) => handleLineItemChange(index, "quantity", Number(e.target.value))}
                               min={1}
+                              placeholder="Qtd"
                             />
                           </div>
-                          <div className="w-32">
+                          <div className="w-full sm:w-28">
                             <Label className="sr-only">Preço Unit.</Label>
                             <Input
                               type="number"
                               value={item.price}
                               onChange={(e) => handleLineItemChange(index, "price", Number(e.target.value))}
                               min={0}
+                              placeholder="Preço"
                             />
                           </div>
                           {lineItems.length > 1 && (
-                            <Button variant="ghost" size="icon" onClick={() => removeLineItem(index)}>
+                            <Button variant="ghost" size="icon" onClick={() => removeLineItem(index)} className="shrink-0">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
@@ -271,11 +274,11 @@ const AIGenerationPage = () => {
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-end gap-2">
-                  <Button onClick={handleSave} variant="secondary">
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto">
                       <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
                   </Button>
-                  <Button onClick={handleDownloadPdf}>
+                  <Button onClick={handleDownloadPdf} className="w-full sm:w-auto">
                       <Download className="h-4 w-4 mr-2" /> Baixar PDF
                   </Button>
                 </div>
@@ -283,72 +286,74 @@ const AIGenerationPage = () => {
             )}
           </div>
 
-          <Card 
-            ref={proposalRef}
-            className={cn(
-            "p-8 sticky top-12 self-start bg-white shadow-xl w-full max-w-[794px] lg:h-[1123px] overflow-auto",
-            !proposalTitle && "hidden"
-          )}>
-            <CardHeader className="p-0 mb-6 border-b-2 border-primary pb-4">
-              <div className="flex justify-between items-start">
-                <h2 className="text-3xl font-bold text-primary">ORÇAMENTO</h2>
-                <div className="text-right">
-                  <p className="font-semibold">{companyName || "Nome da Sua Empresa"}</p>
-                  <p className="text-sm text-muted-foreground">{companyEmail || "Seu Email"}</p>
-                  <p className="text-sm text-muted-foreground">{companyNumber || "Seu Telefone"}</p>
-                  <p className="text-sm text-muted-foreground">{companyCnpj || "Seu CNPJ"}</p>
+          <div className="order-1 lg:order-2">
+            <Card 
+              ref={proposalRef}
+              className={cn(
+              "p-4 md:p-8 sticky top-4 self-start bg-white shadow-xl w-full max-w-full lg:max-w-[794px] max-h-[80vh] lg:h-[1123px] overflow-auto",
+              !proposalTitle && "hidden lg:block"
+            )}>
+            <CardHeader className="p-0 mb-4 md:mb-6 border-b-2 border-primary pb-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <h2 className="text-2xl md:text-3xl font-bold text-primary">ORÇAMENTO</h2>
+                <div className="text-left sm:text-right w-full sm:w-auto">
+                  <p className="font-semibold text-sm md:text-base">{companyName || "Nome da Sua Empresa"}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">{companyEmail || "Seu Email"}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">{companyNumber || "Seu Telefone"}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">{companyCnpj || "Seu CNPJ"}</p>
                 </div>
               </div>
               <Separator className="my-4" />
               <div>
                 <p className="text-sm font-semibold">Para:</p>
                 <p className="font-medium">{clientName || "Nome do Cliente"}</p>
-                <p className="text-sm text-muted-foreground">{clientNumber || "Telefone do Cliente"}</p>
-                <p className="text-sm text-muted-foreground">{clientLocation || "Localização do Cliente"}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">{clientNumber || "Telefone do Cliente"}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">{clientLocation || "Localização do Cliente"}</p>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <h3 className="text-xl font-semibold mb-4">
+              <h3 className="text-lg md:text-xl font-semibold mb-4">
                 {proposalTitle || "Título do Orçamento"}
               </h3>
-              <div className="border rounded-md">
-                <div className="grid grid-cols-10 font-bold bg-muted p-2 rounded-t-md">
+              <div className="border rounded-md overflow-x-auto">
+                <div className="grid grid-cols-10 font-bold bg-muted p-2 rounded-t-md min-w-[500px]">
                   <span className="col-span-4">Descrição</span>
                   <span className="col-span-2 text-center">Qtd.</span>
                   <span className="col-span-2 text-right">Preço Unit.</span>
                   <span className="col-span-2 text-right">Total</span>
                 </div>
                 {lineItems.map((item, index) => (
-                  <div key={index} className="grid grid-cols-10 p-2 border-t">
-                    <span className="col-span-4">{item.description || "Item sem descrição"}</span>
-                    <span className="col-span-2 text-center">{item.quantity}</span>
-                    <span className="col-span-2 text-right">R$ {item.price.toFixed(2)}</span>
-                    <span className="col-span-2 text-right">R$ {(item.quantity * item.price).toFixed(2)}</span>
+                  <div key={index} className="grid grid-cols-10 p-2 border-t min-w-[500px]">
+                    <span className="col-span-4 text-xs md:text-sm">{item.description || "Item sem descrição"}</span>
+                    <span className="col-span-2 text-center text-xs md:text-sm">{item.quantity}</span>
+                    <span className="col-span-2 text-right text-xs md:text-sm">R$ {item.price.toFixed(2)}</span>
+                    <span className="col-span-2 text-right text-xs md:text-sm">R$ {(item.quantity * item.price).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-4 flex justify-end">
                 <div className="text-right">
-                  <p className="text-lg font-semibold">Total: R$ {calculateTotal.toFixed(2)}</p>
+                  <p className="text-lg md:text-xl font-semibold">Total: R$ {calculateTotal.toFixed(2)}</p>
                 </div>
               </div>
               <Separator className="my-4" />
               <div>
                 <p className="font-semibold mb-1">Prazo de Entrega:</p>
-                <p className="text-sm text-muted-foreground">{deadline}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">{deadline}</p>
               </div>
               <Separator className="my-4" />
               <div>
                 <p className="font-semibold mb-1">Condições de Pagamento:</p>
-                <p className="text-sm text-muted-foreground">{paymentTerms}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">{paymentTerms}</p>
               </div>
               <Separator className="my-4" />
               <div>
                 <p className="font-semibold mb-1">Observações:</p>
-                <p className="text-sm text-muted-foreground">{observations}</p>
+                <p className="text-xs md:text-sm text-muted-foreground">{observations}</p>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -15,73 +15,73 @@ const Index = () => {
             <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
               <BarChart3 className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-foreground">OrçaFacil IA</span>
+            <span className="text-lg md:text-xl font-bold text-foreground">OrçaFacil IA</span>
           </div>
           <nav className="hidden md:flex space-x-6">
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Preços</a>
             <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contato</a>
           </nav>
-          <Link to="/login"> {/* Use Link para redirecionar */}
-            <Button variant="default">Começar Grátis</Button>
+          <Link to="/login">
+            <Button variant="default" size="sm" className="md:text-base">Começar Grátis</Button>
           </Link>
         </div>
       </header>
       
       {/* Hero Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-background via-background to-primary/5">
+      <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto text-center max-w-6xl">
-          <Badge className="mb-6 bg-primary/10 text-primary border-primary/20">
+          <Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20 text-xs md:text-sm">
             🚀 Novo: IA integrada para orçamentos inteligentes
           </Badge>
           
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent leading-tight">
             Orçamentos Profissionais
             <br />em Segundos
           </h1>
           
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
             Crie orçamentos detalhados, profissionais e personalizados usando o poder da Inteligência Artificial. 
             Aumente suas vendas e impressione seus clientes.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link to="/login"> {/* Use Link para redirecionar */}
-              <Button variant="hero" size="xl">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-8 md:mb-12 px-4">
+            <Link to="/login" className="w-full sm:w-auto">
+              <Button variant="hero" size="lg" className="w-full sm:w-auto text-sm md:text-base">
                 Criar Primeiro Orçamento
               </Button>
             </Link>
-            <Link to="/demo">
-              <Button variant="outline" size="xl">
+            <Link to="/demo" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto text-sm md:text-base">
                 Ver Demonstração
               </Button>
             </Link>
           </div>
 
-          <div className="relative max-w-4xl mx-auto">
+          <div className="relative max-w-4xl mx-auto px-4">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl rounded-3xl"></div>
             <img 
               src="/lovable-uploads/ca2c2fbe-38b9-4fcd-94d2-2ecce94706c5.png" 
               alt="Dashboard do OrçaFacil IA" 
-              className="relative rounded-2xl shadow-2xl w-full"
+              className="relative rounded-xl md:rounded-2xl shadow-2xl w-full"
             />
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4">
+      <section id="features" className="py-12 md:py-20 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 px-4">
               Por que escolher o <span className="text-primary">OrçaFacil IA?</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Transforme seu processo de orçamentos com recursos inteligentes e automação avançada
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-4">
             <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-105">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -158,18 +158,18 @@ const Index = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4 bg-muted/30">
+      <section id="pricing" className="py-12 md:py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+          <div className="text-center mb-8 md:mb-16">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 px-4">
               Preços <span className="text-primary">Transparentes</span>
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-lg md:text-xl text-muted-foreground px-4">
               Escolha o plano ideal para seu negócio
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 px-4">
             <Card className="hover:shadow-lg transition-all duration-300">
               <CardHeader>
                 <CardTitle className="text-center">Gratuito</CardTitle>
@@ -281,73 +281,73 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-       <section className="py-20 px-4">
+       <section className="py-12 md:py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 px-4">
             Pronto para <span className="text-primary">revolucionar</span> seus orçamentos?
           </h2>
-          <p className="text-xl text-muted-foreground mb-8">
+          <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 px-4">
             Junte-se a mais de 5.000 empresas que já automatizaram seus orçamentos
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/login"> {/* Use Link para redirecionar */}
-              <Button variant="hero" size="xl">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4">
+            <Link to="/login" className="w-full sm:w-auto">
+              <Button variant="hero" size="lg" className="w-full sm:w-auto text-sm md:text-base">
                 Começar Gratuitamente
               </Button>
             </Link>
-            <Button variant="outline" size="xl">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto text-sm md:text-base">
               Agendar Demonstração
             </Button>
           </div>
           
-          <div className="flex items-center justify-center gap-2 mt-8 text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-6 md:mt-8 text-xs md:text-sm text-muted-foreground px-4">
             <div className="flex items-center gap-1">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               ))}
             </div>
-            <span>4.9/5 baseado em 1.200+ avaliações</span>
+            <span className="text-center">4.9/5 baseado em 1.200+ avaliações</span>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="bg-muted/50 py-12 px-4">
+      <footer id="contact" className="bg-muted/50 py-8 md:py-12 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start space-x-2 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
                   <BarChart3 className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">OrçaFacil IA</span>
               </div>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 A solução completa para orçamentos profissionais com Inteligência Artificial
               </p>
             </div>
             
-            <div>
+            <div className="text-center md:text-left">
               <h3 className="font-semibold mb-4">Produto</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-muted-foreground text-sm">
                 <li><a href="#" className="hover:text-foreground transition-colors">Recursos</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Preços</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Integrações</a></li>
               </ul>
             </div>
             
-            <div>
+            <div className="text-center md:text-left">
               <h3 className="font-semibold mb-4">Suporte</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-muted-foreground text-sm">
                 <li><a href="#" className="hover:text-foreground transition-colors">Central de Ajuda</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Contato</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Status</a></li>
               </ul>
             </div>
             
-            <div>
+            <div className="text-center md:text-left">
               <h3 className="font-semibold mb-4">Empresa</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-muted-foreground text-sm">
                 <li><a href="#" className="hover:text-foreground transition-colors">Sobre</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Carreiras</a></li>
@@ -355,7 +355,7 @@ const Index = () => {
             </div>
           </div>
           
-          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
+          <div className="border-t mt-6 md:mt-8 pt-6 md:pt-8 text-center text-muted-foreground text-sm">
             <p>&copy; 2024 OrçaFacil IA. Todos os direitos reservados.</p>
           </div>
         </div>
