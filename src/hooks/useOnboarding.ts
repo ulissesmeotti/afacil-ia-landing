@@ -22,8 +22,8 @@ export const useOnboarding = () => {
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('onboarding_completed')
-        .eq('user_id', session.user.id)
-        .single();
+        .eq('id', session.user.id)
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Erro ao verificar onboarding:', error);
@@ -48,11 +48,8 @@ export const useOnboarding = () => {
     try {
       await supabase
         .from('profiles')
-        .upsert({
-          user_id: session.user.id,
-          onboarding_completed: true,
-          updated_at: new Date().toISOString()
-        });
+        .update({ onboarding_completed: true })
+        .eq('id', session.user.id);
 
       setShowOnboarding(false);
     } catch (error) {

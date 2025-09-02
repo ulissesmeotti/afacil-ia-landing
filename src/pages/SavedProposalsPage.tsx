@@ -5,7 +5,8 @@ import Header from "@/components/ui/header";
 import { supabase } from "@/integrations/supabase/client";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { useAuth } from "@/providers/auth-provider";
-import { FileText, Trash2, Eye } from "lucide-react";
+import { DigitalSignature } from "@/components/signature/DigitalSignature";
+import { FileText, Trash2, Eye, PenTool } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -188,6 +189,11 @@ const SavedProposalsPage = () => {
           <Link to={`/propostas/${proposal.id}`}>
             <Button size="sm">Ver Detalhes</Button>
           </Link>
+          <Dialog>
+            <Button variant="ghost" size="icon" title="Assinatura Digital">
+              <PenTool className="h-4 w-4" />
+            </Button>
+          </Dialog>
         </div>
       </CardContent>
     </Card>

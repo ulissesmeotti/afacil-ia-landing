@@ -50,7 +50,7 @@ export const DigitalSignature = ({
       .from('digital_signatures')
       .select('*')
       .eq('proposal_id', proposalId)
-      .single();
+      .maybeSingle();
 
     if (data && !error) {
       setExistingSignature(data);

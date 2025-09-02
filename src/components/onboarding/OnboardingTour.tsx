@@ -184,7 +184,7 @@ export const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
       await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
-        .eq('user_id', session.user.id);
+        .eq('id', session.user.id);
     }
     
     onComplete();
