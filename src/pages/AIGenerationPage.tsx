@@ -74,7 +74,21 @@ const AIGenerationPage = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-proposal', {
-        body: { prompt, style: aiStyle }
+        body: { 
+          prompt, 
+          style: aiStyle,
+          companyData: {
+            name: companyName,
+            number: companyNumber,
+            cnpj: companyCnpj,
+            email: companyEmail
+          },
+          clientData: {
+            name: clientName,
+            number: clientNumber,
+            location: clientLocation
+          }
+        }
       });
 
       if (error) {

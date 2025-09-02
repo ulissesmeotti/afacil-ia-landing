@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, style } = await req.json();
+    const { prompt, style, companyData, clientData } = await req.json();
     
     console.log('Gerando proposta com prompt:', prompt, 'estilo:', style);
 
@@ -24,36 +24,65 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY não configurada');
     }
 
+    // Criar prompt personalizado baseado nos dados existentes
+    const companyInfo = companyData ? `
+      Use os seguintes dados da empresa:
+      - Nome: ${companyData.name || 'Nome da Empresa'}
+      - Telefone: ${companyData.number || 'Telefone da empresa'}
+      - CNPJ: ${companyData.cnpj || 'CNPJ da empresa'}
+      - Email: ${companyData.email || 'Email da empresa'}
+    ` : 'Gere dados fictícios para a empresa prestadora do serviço.';
+
+    const clientInfo = clientData ? `
+      Use os seguintes dados do cliente:
+      - Nome: ${clientData.name || 'Nome do Cliente'}
+      - Telefone: ${clientData.number || 'Telefone do cliente'}
+      - Localização: ${clientData.location || 'Localização do cliente'}
+    ` : 'Gere dados fictícios para o cliente.';
+
     const systemInstruction = {
       role: "user",
       parts: [{
-        text: `Você é um assistente de orçamentos. Sua tarefa é criar um orçamento profissional em formato JSON com base na descrição fornecida. Inclua o nome da empresa, nome do cliente, título do orçamento e uma lista de itens com descrição, quantidade e preço unitário. O estilo do orçamento deve ser ${style}. A resposta deve ser APENAS o JSON, sem texto explicativo antes ou depois. Adicione também os campos "deadline", "observations" e "paymentTerms".
+        text: `Você é um assistente de orçamentos. Sua tarefa é criar um orçamento profissional em formato JSON com base na descrição fornecida. 
 
-        Exemplo de formato JSON:
+        ${companyInfo}
+        ${clientInfo}
+
+        IMPORTANTE: Use EXATAMENTE os dados fornecidos acima. NÃO invente ou altere nenhum dado da empresa ou cliente se eles foram fornecidos.
+
+        Gere apenas:
+        1. Um título apropriado para o orçamento
+        2. Uma lista detalhada de itens do orçamento (lineItems) com descrição, quantidade e preço unitário realistas
+        3. Prazo de entrega (deadline)
+        4. Observações relevantes (observations)  
+        5. Condições de pagamento (paymentTerms)
+
+        O estilo do orçamento deve ser ${style}. A resposta deve ser APENAS o JSON, sem texto explicativo antes ou depois.
+
+        Formato JSON obrigatório:
         {
-          "companyName": "Nome da Empresa",
-          "companyNumber": "Telefone da empresa (formato brasileiro)",
-          "companyCnpj": "CNPJ da empresa (formato brasileiro válido)",
-          "companyEmail": "Email da empresa",
-          "clientName": "Nome do Cliente",
-          "clientNumber": "Telefone do cliente (formato brasileiro)",
-          "clientLocation": "Localização do cliente (cidade/estado)",
-          "title": "Título do Orçamento",
+          "companyName": "${companyData?.name || 'Nome da Empresa'}",
+          "companyNumber": "${companyData?.number || 'Telefone da empresa'}",
+          "companyCnpj": "${companyData?.cnpj || 'CNPJ da empresa'}",
+          "companyEmail": "${companyData?.email || 'Email da empresa'}",
+          "clientName": "${clientData?.name || 'Nome do Cliente'}",
+          "clientNumber": "${clientData?.number || 'Telefone do cliente'}",
+          "clientLocation": "${clientData?.location || 'Localização do cliente'}",
+          "title": "Título do Orçamento baseado no serviço",
           "lineItems": [
-            {"description": "Item 1", "quantity": 1, "price": 100.00},
-            {"description": "Item 2", "quantity": 2, "price": 50.00}
+            {"description": "Item detalhado 1", "quantity": 1, "price": 100.00},
+            {"description": "Item detalhado 2", "quantity": 2, "price": 50.00}
           ],
-          "deadline": "15 dias úteis",
-          "observations": "Validade da proposta de 30 dias.",
-          "paymentTerms": "50% de entrada, 50% na conclusão."
-        }
-        `
+          "deadline": "Prazo realista em dias úteis",
+          "observations": "Observações relevantes sobre o projeto",
+          "paymentTerms": "Condições de pagamento claras"
+        }`
       }]
     };
 
     const userPrompt = {
       role: "user",
-      parts: [{ text: prompt }]
+      parts: [{ text: `Gere um orçamento para: ${prompt}` }]
     };
 
     const geminiResponse = await fetch(
