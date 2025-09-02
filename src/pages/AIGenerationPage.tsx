@@ -6,15 +6,60 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Download, Plus, Save, Trash2, Wand2 } from "lucide-react";
+import { Download, Plus, Save, Trash2, Wand2, Palette } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+interface Template {
+  id: string;
+  name: string;
+  primaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+}
+
+const templates: Template[] = [
+  {
+    id: 'default',
+    name: 'Padrão',
+    primaryColor: '#6366f1',
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    accentColor: '#f3f4f6'
+  },
+  {
+    id: 'minimal',
+    name: 'Minimalista',
+    primaryColor: '#000000',
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    accentColor: '#e5e7eb'
+  },
+  {
+    id: 'dark',
+    name: 'Dark',
+    primaryColor: '#60a5fa',
+    backgroundColor: '#1f2937',
+    textColor: '#ffffff',
+    accentColor: '#374151'
+  },
+  {
+    id: 'elegant',
+    name: 'Elegante',
+    primaryColor: '#059669',
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    accentColor: '#f0fdf4'
+  }
+];
 
 const AIGenerationPage = () => {
   const { session } = useAuth();
@@ -26,6 +71,13 @@ const AIGenerationPage = () => {
   const [aiStyle, setAiStyle] = useState("profissional");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
+  const [customColors, setCustomColors] = useState({
+    primary: '#6366f1',
+    background: '#ffffff',
+    text: '#000000',
+    accent: '#f3f4f6'
+  });
 
   const [companyName, setCompanyName] = useState("");
   const [companyNumber, setCompanyNumber] = useState("");
@@ -42,14 +94,45 @@ const AIGenerationPage = () => {
 
   const proposalRef = useRef<HTMLDivElement | null>(null);
 
+  const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
+  const activeColors = selectedTemplate === 'custom' ? customColors : {
+    primary: currentTemplate.primaryColor,
+    background: currentTemplate.backgroundColor,
+    text: currentTemplate.textColor,
+    accent: currentTemplate.accentColor
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    setIsSaved(false);
+    if (templateId !== 'custom') {
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        setCustomColors({
+          primary: template.primaryColor,
+          background: template.backgroundColor,
+          text: template.textColor,
+          accent: template.accentColor
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     // profile já é carregado dentro do hook usePlanLimits
   }, [profile]);
 
-  const addLineItem = () => setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
-  const removeLineItem = (index: number) => setLineItems(lineItems.filter((_, i) => i !== index));
+  const addLineItem = () => {
+    setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
+    setIsSaved(false);
+  };
+  const removeLineItem = (index: number) => {
+    setLineItems(lineItems.filter((_, i) => i !== index));
+    setIsSaved(false);
+  };
   const handleLineItemChange = (index: number, field: string, value: any) => {
     setLineItems((prev) => prev.map((it, i) => (i === index ? { ...it, [field]: value } : it)));
+    setIsSaved(false);
   };
 
   const calculateTotal = useMemo(
@@ -163,19 +246,36 @@ const AIGenerationPage = () => {
   };
 
   const handleDownloadPdf = () => {
+    if (!isSaved) {
+      toast.error("Você precisa salvar o orçamento antes de fazer o download.");
+      return;
+    }
+    
     if (proposalRef.current) {
       toast.info("Preparando download do PDF...");
-      html2canvas(proposalRef.current, { scale: 2, backgroundColor: "#ffffff" }).then((canvas) => {
+      const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
+      const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
+      
+      html2canvas(proposalRef.current, { 
+        scale: 2, 
+        backgroundColor: bgColor,
+        useCORS: true,
+        allowTaint: true
+      }).then((canvas) => {
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-        const imgX = (pdfWidth - imgWidth * ratio) / 2;
+        
+        // Remove margens - ocupa toda a largura
+        const imgX = 0;
         const imgY = 0;
-        pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+        const finalWidth = pdfWidth;
+        const finalHeight = (imgHeight * finalWidth) / imgWidth;
+        
+        pdf.addImage(imgData, "PNG", imgX, imgY, finalWidth, finalHeight);
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
       });
     }
@@ -311,6 +411,104 @@ const AIGenerationPage = () => {
                   </CardContent>
                 </Card>
 
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Personalização</CardTitle>
+                    <CardDescription>Escolha o template e personalize as cores do orçamento.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="template">Template</Label>
+                      <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates.map((template) => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom">Personalizado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {selectedTemplate === 'custom' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="primaryColor">Cor Principal</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="primaryColor"
+                              type="color"
+                              value={customColors.primary}
+                              onChange={(e) => { setCustomColors({...customColors, primary: e.target.value}); setIsSaved(false); }}
+                              className="w-16 h-10 p-1 rounded"
+                            />
+                            <Input
+                              value={customColors.primary}
+                              onChange={(e) => { setCustomColors({...customColors, primary: e.target.value}); setIsSaved(false); }}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="backgroundColor">Cor de Fundo</Label>
+                          <div className="flex gap-2">
+                             <Input
+                               id="backgroundColor"
+                               type="color"
+                               value={customColors.background}
+                               onChange={(e) => { setCustomColors({...customColors, background: e.target.value}); setIsSaved(false); }}
+                               className="w-16 h-10 p-1 rounded"
+                             />
+                            <Input
+                              value={customColors.background}
+                              onChange={(e) => { setCustomColors({...customColors, background: e.target.value}); setIsSaved(false); }}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="textColor">Cor do Texto</Label>
+                          <div className="flex gap-2">
+                             <Input
+                               id="textColor"
+                               type="color"
+                               value={customColors.text}
+                               onChange={(e) => { setCustomColors({...customColors, text: e.target.value}); setIsSaved(false); }}
+                               className="w-16 h-10 p-1 rounded"
+                             />
+                            <Input
+                              value={customColors.text}
+                              onChange={(e) => { setCustomColors({...customColors, text: e.target.value}); setIsSaved(false); }}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="accentColor">Cor de Destaque</Label>
+                          <div className="flex gap-2">
+                             <Input
+                               id="accentColor"
+                               type="color"
+                               value={customColors.accent}
+                               onChange={(e) => { setCustomColors({...customColors, accent: e.target.value}); setIsSaved(false); }}
+                               className="w-16 h-10 p-1 rounded"
+                             />
+                            <Input
+                              value={customColors.accent}
+                              onChange={(e) => { setCustomColors({...customColors, accent: e.target.value}); setIsSaved(false); }}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <div className="flex flex-col sm:flex-row justify-end gap-2">
                   <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto">
                       <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
@@ -327,40 +525,45 @@ const AIGenerationPage = () => {
             <Card 
               ref={proposalRef}
               className={cn(
-              "p-4 md:p-8 sticky top-4 self-start bg-white shadow-xl w-full max-w-full lg:max-w-[794px] max-h-[80vh] lg:h-[1123px] overflow-auto",
-              !proposalTitle && "hidden lg:block"
-            )}>
-            <CardHeader className="p-0 mb-4 md:mb-6 border-b-2 border-primary pb-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <h2 className="text-2xl md:text-3xl font-bold text-primary">ORÇAMENTO</h2>
-                <div className="text-left sm:text-right w-full sm:w-auto">
-                  <p className="font-semibold text-sm md:text-base">{companyName || "Nome da Sua Empresa"}</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">{companyEmail || "Seu Email"}</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">{companyNumber || "Seu Telefone"}</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">{companyCnpj || "Seu CNPJ"}</p>
+                "p-8 sticky top-4 self-start shadow-xl w-full max-w-[794px] lg:h-[1123px] overflow-auto",
+                !proposalTitle && "hidden lg:block"
+              )}
+              style={{ 
+                backgroundColor: activeColors.background,
+                color: activeColors.text
+              }}
+            >
+              <CardHeader className="p-0 mb-6 pb-4" style={{ borderBottomColor: activeColors.primary, borderBottomWidth: '2px' }}>
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                  <h2 className="text-2xl md:text-3xl font-bold" style={{ color: activeColors.primary }}>ORÇAMENTO</h2>
+                  <div className="text-left sm:text-right w-full sm:w-auto">
+                    <p className="font-semibold text-sm md:text-base" style={{ color: activeColors.text }}>{companyName || "Nome da Sua Empresa"}</p>
+                    <p className="text-xs md:text-sm opacity-75">{companyEmail || "Seu Email"}</p>
+                    <p className="text-xs md:text-sm opacity-75">{companyNumber || "Seu Telefone"}</p>
+                    <p className="text-xs md:text-sm opacity-75">{companyCnpj || "Seu CNPJ"}</p>
+                  </div>
                 </div>
-              </div>
-              <Separator className="my-4" />
-              <div>
-                <p className="text-sm font-semibold">Para:</p>
-                <p className="font-medium">{clientName || "Nome do Cliente"}</p>
-                <p className="text-xs md:text-sm text-muted-foreground">{clientNumber || "Telefone do Cliente"}</p>
-                <p className="text-xs md:text-sm text-muted-foreground">{clientLocation || "Localização do Cliente"}</p>
-              </div>
-            </CardHeader>
+                <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: activeColors.text }}>Para:</p>
+                  <p className="font-medium" style={{ color: activeColors.text }}>{clientName || "Nome do Cliente"}</p>
+                  <p className="text-xs md:text-sm opacity-75">{clientNumber || "Telefone do Cliente"}</p>
+                  <p className="text-xs md:text-sm opacity-75">{clientLocation || "Localização do Cliente"}</p>
+                </div>
+              </CardHeader>
             <CardContent className="p-0">
-              <h3 className="text-lg md:text-xl font-semibold mb-4">
+              <h3 className="text-lg md:text-xl font-semibold mb-4" style={{ color: activeColors.text }}>
                 {proposalTitle || "Título do Orçamento"}
               </h3>
-              <div className="border rounded-md overflow-x-auto">
-                <div className="grid grid-cols-10 font-bold bg-muted p-2 rounded-t-md min-w-[500px]">
+              <div className="border rounded-md overflow-x-auto" style={{ borderColor: activeColors.primary }}>
+                <div className="grid grid-cols-10 font-bold p-2 rounded-t-md min-w-[500px]" style={{ backgroundColor: activeColors.accent, color: activeColors.text }}>
                   <span className="col-span-4">Descrição</span>
                   <span className="col-span-2 text-center">Qtd.</span>
                   <span className="col-span-2 text-right">Preço Unit.</span>
                   <span className="col-span-2 text-right">Total</span>
                 </div>
                 {lineItems.map((item, index) => (
-                  <div key={index} className="grid grid-cols-10 p-2 border-t min-w-[500px]">
+                  <div key={index} className="grid grid-cols-10 p-2 min-w-[500px]" style={{ borderTop: `1px solid ${activeColors.primary}`, color: activeColors.text }}>
                     <span className="col-span-4 text-xs md:text-sm">{item.description || "Item sem descrição"}</span>
                     <span className="col-span-2 text-center text-xs md:text-sm">{item.quantity}</span>
                     <span className="col-span-2 text-right text-xs md:text-sm">R$ {item.price.toFixed(2)}</span>
@@ -370,23 +573,23 @@ const AIGenerationPage = () => {
               </div>
               <div className="mt-4 flex justify-end">
                 <div className="text-right">
-                  <p className="text-lg md:text-xl font-semibold">Total: R$ {calculateTotal.toFixed(2)}</p>
+                  <p className="text-lg md:text-xl font-semibold" style={{ color: activeColors.text }}>Total: R$ {calculateTotal.toFixed(2)}</p>
                 </div>
               </div>
-              <Separator className="my-4" />
+              <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
               <div>
-                <p className="font-semibold mb-1">Prazo de Entrega:</p>
-                <p className="text-xs md:text-sm text-muted-foreground">{deadline}</p>
+                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Prazo de Entrega:</p>
+                <p className="text-xs md:text-sm opacity-75">{deadline}</p>
               </div>
-              <Separator className="my-4" />
+              <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
               <div>
-                <p className="font-semibold mb-1">Condições de Pagamento:</p>
-                <p className="text-xs md:text-sm text-muted-foreground">{paymentTerms}</p>
+                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Condições de Pagamento:</p>
+                <p className="text-xs md:text-sm opacity-75">{paymentTerms}</p>
               </div>
-              <Separator className="my-4" />
+              <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
               <div>
-                <p className="font-semibold mb-1">Observações:</p>
-                <p className="text-xs md:text-sm text-muted-foreground">{observations}</p>
+                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Observações:</p>
+                <p className="text-xs md:text-sm opacity-75">{observations}</p>
               </div>
             </CardContent>
             </Card>
