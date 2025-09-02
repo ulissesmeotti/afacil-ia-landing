@@ -183,8 +183,28 @@ const AIGenerationPage = () => {
                   <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="companyNumber">Telefone da Empresa</Label>
+                  <Input id="companyNumber" value={companyNumber} onChange={(e) => setCompanyNumber(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="companyCnpj">CNPJ</Label>
+                  <Input id="companyCnpj" value={companyCnpj} onChange={(e) => setCompanyCnpj(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="companyEmail">Email da Empresa</Label>
+                  <Input id="companyEmail" type="email" value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="clientName">Nome do Cliente</Label>
                   <Input id="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="clientNumber">Telefone do Cliente</Label>
+                  <Input id="clientNumber" value={clientNumber} onChange={(e) => setClientNumber(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="clientLocation">Localização do Cliente</Label>
+                  <Input id="clientLocation" value={clientLocation} onChange={(e) => setClientLocation(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="description">Descrição do Serviço</Label>
