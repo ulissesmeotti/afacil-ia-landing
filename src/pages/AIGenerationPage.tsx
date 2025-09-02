@@ -25,6 +25,7 @@ const AIGenerationPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [aiStyle, setAiStyle] = useState("profissional");
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const [companyName, setCompanyName] = useState("");
   const [companyNumber, setCompanyNumber] = useState("");
@@ -116,6 +117,7 @@ const AIGenerationPage = () => {
       }
 
       setIsEditing(true);
+      setIsSaved(false);
       toast.success("Orçamento gerado! Agora você pode editar os detalhes.");
     } catch (error) {
       toast.error("Erro ao gerar orçamento com IA.");
@@ -155,6 +157,7 @@ const AIGenerationPage = () => {
       toast.error("Erro ao salvar o orçamento.");
       console.error("Supabase error:", error);
     } else {
+      setIsSaved(true);
       toast.success("Orçamento salvo com sucesso!");
     }
   };
@@ -312,7 +315,7 @@ const AIGenerationPage = () => {
                   <Button onClick={handleSave} variant="secondary" className="w-full sm:w-auto">
                       <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
                   </Button>
-                  <Button onClick={handleDownloadPdf} className="w-full sm:w-auto">
+                  <Button onClick={handleDownloadPdf} disabled={!isSaved} className="w-full sm:w-auto">
                       <Download className="h-4 w-4 mr-2" /> Baixar PDF
                   </Button>
                 </div>
