@@ -14,12 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      digital_signatures: {
+        Row: {
+          created_at: string
+          id: string
+          proposal_id: string
+          signature_data: string
+          signed_at: string
+          signer_email: string
+          signer_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proposal_id: string
+          signature_data: string
+          signed_at?: string
+          signer_email: string
+          signer_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proposal_id?: string
+          signature_data?: string
+          signed_at?: string
+          signer_email?: string
+          signer_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_signatures_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ai_usage_count: number
           email: string
           id: string
           manual_usage_count: number | null
+          onboarding_completed: boolean | null
           plan_type: string
         }
         Insert: {
@@ -27,6 +69,7 @@ export type Database = {
           email: string
           id: string
           manual_usage_count?: number | null
+          onboarding_completed?: boolean | null
           plan_type?: string
         }
         Update: {
@@ -34,6 +77,7 @@ export type Database = {
           email?: string
           id?: string
           manual_usage_count?: number | null
+          onboarding_completed?: boolean | null
           plan_type?: string
         }
         Relationships: []
