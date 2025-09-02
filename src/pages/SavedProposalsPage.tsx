@@ -6,7 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { useAuth } from "@/providers/auth-provider";
 import { DigitalSignature } from "@/components/signature/DigitalSignature";
-import { FileText, Trash2, Eye, PenTool } from "lucide-react";
+import { ProposalStatusBadge } from "@/components/proposal-status-badge";
+import { ProposalStatusSelector } from "@/components/proposal-status-selector";
+import { FileText, Trash2, Eye, PenTool, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -26,6 +28,7 @@ interface Proposal {
   total: number;
   line_items: string;
   creation_type: 'ai' | 'manual';
+  status: 'pending' | 'accepted' | 'rejected';
 }
 
 const SavedProposalsPage = () => {
@@ -80,8 +83,24 @@ const SavedProposalsPage = () => {
     }
   };
 
-  const aiProposals = proposals.filter(proposal => proposal.creation_type === 'ai');
-  const manualProposals = proposals.filter(proposal => proposal.creation_type === 'manual');
+  const handleStatusChange = async (proposalId: string, newStatus: 'pending' | 'accepted' | 'rejected') => {
+    const { error } = await supabase
+      .from('proposals')
+      .update({ status: newStatus })
+      .eq('id', proposalId);
+
+    if (error) {
+      toast.error("Erro ao atualizar status da proposta.");
+      console.error("Supabase error:", error);
+    } else {
+      toast.success("Status atualizado com sucesso!");
+      fetchProposals();
+    }
+  };
+
+  const acceptedProposals = proposals.filter(proposal => proposal.status === 'accepted');
+  const pendingProposals = proposals.filter(proposal => proposal.status === 'pending');
+  const rejectedProposals = proposals.filter(proposal => proposal.status === 'rejected');
 
   const handleViewProposal = (proposal: Proposal) => {
     const userPlan = profile?.plan_type || 'gratuito';
@@ -167,33 +186,51 @@ const SavedProposalsPage = () => {
   const ProposalCard = ({ proposal }: { proposal: Proposal }) => (
     <Card key={proposal.id}>
       <CardHeader>
-        <CardTitle>{proposal.title}</CardTitle>
-        <CardDescription>Cliente: {proposal.client_name}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-between items-center">
-        <div className="text-lg font-semibold">
-          R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>{proposal.title}</CardTitle>
+            <CardDescription>Cliente: {proposal.client_name}</CardDescription>
+          </div>
+          <ProposalStatusBadge status={proposal.status} />
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => handleViewProposal(proposal)}
-            title={profile?.plan_type === 'enterprise' ? 'Editar orçamento' : 'Visualizar orçamento'}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Link to={`/propostas/${proposal.id}`}>
-            <Button size="sm">Ver Detalhes</Button>
-          </Link>
-          <Dialog>
-            <Button variant="ghost" size="icon" title="Assinatura Digital">
-              <PenTool className="h-4 w-4" />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="text-lg font-semibold">
+            R$ {proposal.total ? proposal.total.toFixed(2) : '0.00'}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {proposal.creation_type === 'ai' ? 'IA' : 'Manual'}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center">
+          <ProposalStatusSelector
+            value={proposal.status}
+            onValueChange={(newStatus) => handleStatusChange(proposal.id, newStatus)}
+          />
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => handleViewProposal(proposal)}
+              title={profile?.plan_type === 'enterprise' ? 'Editar orçamento' : 'Visualizar orçamento'}
+            >
+              <Eye className="h-4 w-4" />
             </Button>
-          </Dialog>
+            <Button variant="ghost" size="icon" onClick={() => handleDelete(proposal.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Link to={`/propostas/${proposal.id}`}>
+              <Button size="sm">Ver Detalhes</Button>
+            </Link>
+            <Dialog>
+              <Button variant="ghost" size="icon" title="Assinatura Digital">
+                <PenTool className="h-4 w-4" />
+              </Button>
+            </Dialog>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -234,54 +271,83 @@ const SavedProposalsPage = () => {
           </Card>
         ) : (
           <div className="space-y-8">
-            {/* Orçamentos com IA */}
+            {/* Propostas Aceitas */}
             <div>
               <div className="flex items-center gap-4 mb-6">
-                <h2 className="text-2xl font-semibold">Orçamentos com IA</h2>
-                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
-                  {aiProposals.length} orçamentos
+                <CheckCircle className="h-6 w-6 text-green-600" />
+                <h2 className="text-2xl font-semibold">Propostas Aceitas</h2>
+                <div className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1 rounded-full text-sm font-medium">
+                  {acceptedProposals.length} propostas
                 </div>
               </div>
               
-              {aiProposals.length === 0 ? (
+              {acceptedProposals.length === 0 ? (
                 <Card className="text-center p-6 border-dashed">
                   <CardContent>
-                    <p className="text-muted-foreground mb-4">Nenhum orçamento criado com IA ainda.</p>
-                    <Link to="/propostas/ai">
-                      <Button variant="outline">Criar Orçamento com IA</Button>
-                    </Link>
+                    <p className="text-muted-foreground">Nenhuma proposta aceita ainda.</p>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {aiProposals.map((proposal) => (
+                  {acceptedProposals.map((proposal) => (
                     <ProposalCard key={proposal.id} proposal={proposal} />
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Orçamentos Manuais */}
+            {/* Propostas Pendentes */}
             <div>
               <div className="flex items-center gap-4 mb-6">
-                <h2 className="text-2xl font-semibold">Orçamentos Manuais</h2>
-                <div className="bg-secondary/10 text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                  {manualProposals.length} orçamentos
+                <Clock className="h-6 w-6 text-yellow-600" />
+                <h2 className="text-2xl font-semibold">Propostas Aguardando</h2>
+                <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-3 py-1 rounded-full text-sm font-medium">
+                  {pendingProposals.length} propostas
                 </div>
               </div>
               
-              {manualProposals.length === 0 ? (
+              {pendingProposals.length === 0 ? (
                 <Card className="text-center p-6 border-dashed">
                   <CardContent>
-                    <p className="text-muted-foreground mb-4">Nenhum orçamento manual criado ainda.</p>
-                    <Link to="/propostas/manual">
-                      <Button variant="outline">Criar Orçamento Manual</Button>
-                    </Link>
+                    <p className="text-muted-foreground mb-4">Nenhuma proposta pendente.</p>
+                    <div className="flex gap-4 justify-center">
+                      <Link to="/propostas/manual">
+                        <Button>Criar Orçamento Manual</Button>
+                      </Link>
+                      <Link to="/propostas/ia">
+                        <Button variant="outline">Criar com IA</Button>
+                      </Link>
+                    </div>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {manualProposals.map((proposal) => (
+                  {pendingProposals.map((proposal) => (
+                    <ProposalCard key={proposal.id} proposal={proposal} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Propostas Rejeitadas */}
+            <div>
+              <div className="flex items-center gap-4 mb-6">
+                <XCircle className="h-6 w-6 text-red-600" />
+                <h2 className="text-2xl font-semibold">Propostas Rejeitadas</h2>
+                <div className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-3 py-1 rounded-full text-sm font-medium">
+                  {rejectedProposals.length} propostas
+                </div>
+              </div>
+              
+              {rejectedProposals.length === 0 ? (
+                <Card className="text-center p-6 border-dashed">
+                  <CardContent>
+                    <p className="text-muted-foreground">Nenhuma proposta rejeitada.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {rejectedProposals.map((proposal) => (
                     <ProposalCard key={proposal.id} proposal={proposal} />
                   ))}
                 </div>

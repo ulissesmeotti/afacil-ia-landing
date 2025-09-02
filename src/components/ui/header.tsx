@@ -6,6 +6,7 @@ import { FileText, Home, LogOut, User, HelpCircle, Menu } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -97,7 +98,8 @@ const Header = () => {
         </nav>
 
         {/* User actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
           <Link to="/perfil">
             <Button variant="ghost" size="icon">
               <User className="h-4 w-4" />
