@@ -203,11 +203,152 @@ export const DigitalSignature = ({
     if (!existingSignature) return;
 
     try {
-      // Aqui você integraria com a geração do PDF incluindo a assinatura
-      // Por enquanto, apenas um toast de sucesso
-      toast.success("Download do documento assinado iniciado");
+      setIsLoading(true);
+      
+      // Buscar dados da proposta
+      const { data: proposal, error } = await supabase
+        .from('proposals')
+        .select('*')
+        .eq('id', proposalId)
+        .single();
+
+      if (error || !proposal) {
+        throw new Error('Proposta não encontrada');
+      }
+
+      // Importar dinamicamente as bibliotecas para PDF
+      const { jsPDF } = await import('jspdf');
+      
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Configurar fonte
+      doc.setFont('helvetica');
+      
+      // Cabeçalho
+      doc.setFontSize(20);
+      doc.setTextColor(30, 64, 175); // Cor primária
+      doc.text(proposal.title, 20, 30);
+      
+      // Informações da empresa
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('DADOS DA EMPRESA:', 20, 50);
+      doc.setFontSize(10);
+      doc.text(`Nome: ${proposal.company_name}`, 20, 60);
+      if (proposal.company_email) doc.text(`Email: ${proposal.company_email}`, 20, 70);
+      if (proposal.company_cnpj) doc.text(`CNPJ: ${proposal.company_cnpj}`, 20, 80);
+      
+      // Informações do cliente
+      doc.setFontSize(12);
+      doc.text('DADOS DO CLIENTE:', 20, 100);
+      doc.setFontSize(10);
+      doc.text(`Nome: ${proposal.client_name}`, 20, 110);
+      if (proposal.client_location) doc.text(`Localização: ${proposal.client_location}`, 20, 120);
+      
+      // Itens do orçamento
+      if (proposal.line_items) {
+        const lineItems = JSON.parse(proposal.line_items);
+        doc.setFontSize(12);
+        doc.text('ITENS DO ORÇAMENTO:', 20, 140);
+        
+        let yPos = 150;
+        doc.setFontSize(10);
+        doc.text('Descrição', 20, yPos);
+        doc.text('Qtd', 100, yPos);
+        doc.text('Valor Unit.', 130, yPos);
+        doc.text('Total', 170, yPos);
+        
+        yPos += 10;
+        lineItems.forEach((item: any) => {
+          doc.text(item.description.substring(0, 30), 20, yPos);
+          doc.text(item.quantity.toString(), 100, yPos);
+          doc.text(`R$ ${item.price.toFixed(2)}`, 130, yPos);
+          doc.text(`R$ ${(item.quantity * item.price).toFixed(2)}`, 170, yPos);
+          yPos += 8;
+        });
+        
+        // Total
+        yPos += 5;
+        doc.setFontSize(12);
+        doc.text(`TOTAL GERAL: R$ ${proposal.total.toFixed(2)}`, 130, yPos);
+      }
+      
+      // Termos e condições
+      let termsYPos = 200;
+      if (proposal.deadline || proposal.payment_terms || proposal.observations) {
+        doc.setFontSize(12);
+        doc.text('TERMOS E CONDIÇÕES:', 20, termsYPos);
+        termsYPos += 10;
+        doc.setFontSize(10);
+        
+        if (proposal.deadline) {
+          doc.text(`Prazo de entrega: ${proposal.deadline}`, 20, termsYPos);
+          termsYPos += 8;
+        }
+        if (proposal.payment_terms) {
+          doc.text(`Condições de pagamento: ${proposal.payment_terms}`, 20, termsYPos);
+          termsYPos += 8;
+        }
+        if (proposal.observations) {
+          const splitText = doc.splitTextToSize(`Observações: ${proposal.observations}`, 170);
+          doc.text(splitText, 20, termsYPos);
+          termsYPos += splitText.length * 5;
+        }
+      }
+      
+      // Adicionar assinatura
+      const signatureYPos = Math.max(termsYPos + 20, 240);
+      doc.setFontSize(12);
+      doc.text('ASSINATURA DIGITAL:', 20, signatureYPos);
+      
+      // Converter assinatura para imagem e adicionar ao PDF
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d')!;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 20, signatureYPos + 10, 100, 30);
+        
+        // Dados da assinatura
+        doc.setFontSize(10);
+        doc.text(`Assinado por: ${existingSignature.signer_name}`, 20, signatureYPos + 50);
+        doc.text(`Email: ${existingSignature.signer_email}`, 20, signatureYPos + 60);
+        doc.text(`Data: ${new Date(existingSignature.signed_at).toLocaleString('pt-BR')}`, 20, signatureYPos + 70);
+        
+        // Salvar PDF
+        const fileName = `${proposal.title.replace(/[^a-zA-Z0-9]/g, '_')}_assinado.pdf`;
+        doc.save(fileName);
+        
+        toast.success("PDF baixado com sucesso!");
+        setIsLoading(false);
+      };
+      
+      img.onerror = () => {
+        // Fallback: PDF sem imagem da assinatura
+        doc.setFontSize(10);
+        doc.text(`Assinado por: ${existingSignature.signer_name}`, 20, signatureYPos + 20);
+        doc.text(`Email: ${existingSignature.signer_email}`, 20, signatureYPos + 30);
+        doc.text(`Data: ${new Date(existingSignature.signed_at).toLocaleString('pt-BR')}`, 20, signatureYPos + 40);
+        
+        const fileName = `${proposal.title.replace(/[^a-zA-Z0-9]/g, '_')}_assinado.pdf`;
+        doc.save(fileName);
+        
+        toast.success("PDF baixado com sucesso!");
+        setIsLoading(false);
+      };
+      
+      img.src = existingSignature.signature_data;
+      
     } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
       toast.error("Erro ao baixar documento");
+      setIsLoading(false);
     }
   };
 
@@ -248,9 +389,9 @@ export const DigitalSignature = ({
             />
           </div>
           <div className="flex gap-2">
-            <Button onClick={downloadSignedProposal} variant="default">
+            <Button onClick={downloadSignedProposal} variant="default" disabled={isLoading}>
               <Download className="h-4 w-4 mr-2" />
-              Baixar PDF Assinado
+              {isLoading ? "Gerando PDF..." : "Baixar PDF Assinado"}
             </Button>
             <Button onClick={shareSignatureLink} variant="outline">
               <Share className="h-4 w-4 mr-2" />
