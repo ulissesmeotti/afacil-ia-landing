@@ -163,6 +163,13 @@ const ManualProposalsPage = () => {
       payment_terms: paymentTerms,
       total: calculateTotal,
       creation_type: 'manual',
+      template_id: selectedTemplate,
+      template_colors: selectedTemplate === 'custom' ? customColors : {
+        primary: currentTemplate.primaryColor,
+        background: currentTemplate.backgroundColor,
+        text: currentTemplate.textColor,
+        accent: currentTemplate.accentColor
+      }
     };
 
     const { error } = await supabase.from("proposals").insert([newProposal]);

@@ -26,6 +26,13 @@ interface SignatureData {
   signed_at: string;
 }
 
+interface TemplateColors {
+  primary: string;
+  background: string;
+  text: string;
+  accent: string;
+}
+
 export const DigitalSignature = ({ 
   proposalId, 
   proposalTitle, 
@@ -205,7 +212,7 @@ export const DigitalSignature = ({
     try {
       setIsLoading(true);
       
-      // Buscar dados da proposta
+      // Buscar dados da proposta incluindo template
       const { data: proposal, error } = await supabase
         .from('proposals')
         .select('*')
@@ -216,80 +223,156 @@ export const DigitalSignature = ({
         throw new Error('Proposta não encontrada');
       }
 
+      // Configurar cores do template
+      const templates = [
+        { id: 'default', primaryColor: '#6366f1', backgroundColor: '#ffffff', textColor: '#000000', accentColor: '#f3f4f6' },
+        { id: 'minimal', primaryColor: '#000000', backgroundColor: '#ffffff', textColor: '#000000', accentColor: '#e5e7eb' },
+        { id: 'dark', primaryColor: '#60a5fa', backgroundColor: '#1f2937', textColor: '#ffffff', accentColor: '#374151' },
+        { id: 'elegant', primaryColor: '#059669', backgroundColor: '#ffffff', textColor: '#000000', accentColor: '#f0fdf4' }
+      ];
+
+      const currentTemplate = templates.find(t => t.id === proposal.template_id) || templates[0];
+      
+      let colors: TemplateColors;
+      if (proposal.template_colors && typeof proposal.template_colors === 'object' && !Array.isArray(proposal.template_colors)) {
+        const templateColors = proposal.template_colors as Record<string, any>;
+        colors = {
+          primary: templateColors.primary || currentTemplate.primaryColor,
+          background: templateColors.background || currentTemplate.backgroundColor,
+          text: templateColors.text || currentTemplate.textColor,
+          accent: templateColors.accent || currentTemplate.accentColor
+        };
+      } else {
+        colors = {
+          primary: currentTemplate.primaryColor,
+          background: currentTemplate.backgroundColor,
+          text: currentTemplate.textColor,
+          accent: currentTemplate.accentColor
+        };
+      }
+
       // Importar dinamicamente as bibliotecas para PDF
       const { jsPDF } = await import('jspdf');
       
       const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Configurar fundo se não for branco
+      if (colors.background !== '#ffffff' && colors.background !== '#FFFFFF') {
+        doc.setFillColor(colors.background);
+        doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
+      }
+      
+      // Converter cores hex para RGB
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+      };
+
+      const primaryRgb = hexToRgb(colors.primary);
+      const textRgb = hexToRgb(colors.text);
+      const accentRgb = hexToRgb(colors.accent);
       
       // Configurar fonte
       doc.setFont('helvetica');
       
-      // Cabeçalho
+      // Cabeçalho com cores do template
       doc.setFontSize(20);
-      doc.setTextColor(30, 64, 175); // Cor primária
-      doc.text(proposal.title, 20, 30);
+      doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.text('ORÇAMENTO', 20, 30);
+      
+      // Título da proposta
+      doc.setFontSize(16);
+      doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+      doc.text(proposal.title, 20, 45);
+      
+      // Linha separadora
+      doc.setDrawColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      doc.setLineWidth(1);
+      doc.line(20, 50, 190, 50);
       
       // Informações da empresa
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text('DADOS DA EMPRESA:', 20, 50);
+      doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+      doc.text('DADOS DA EMPRESA:', 20, 65);
       doc.setFontSize(10);
-      doc.text(`Nome: ${proposal.company_name}`, 20, 60);
-      if (proposal.company_email) doc.text(`Email: ${proposal.company_email}`, 20, 70);
-      if (proposal.company_cnpj) doc.text(`CNPJ: ${proposal.company_cnpj}`, 20, 80);
+      doc.text(`Nome: ${proposal.company_name}`, 20, 75);
+      if (proposal.company_email) doc.text(`Email: ${proposal.company_email}`, 20, 82);
+      if (proposal.company_number) doc.text(`Telefone: ${proposal.company_number}`, 20, 89);
+      if (proposal.company_cnpj) doc.text(`CNPJ: ${proposal.company_cnpj}`, 20, 96);
       
       // Informações do cliente
       doc.setFontSize(12);
-      doc.text('DADOS DO CLIENTE:', 20, 100);
+      doc.text('DADOS DO CLIENTE:', 20, 110);
       doc.setFontSize(10);
-      doc.text(`Nome: ${proposal.client_name}`, 20, 110);
-      if (proposal.client_location) doc.text(`Localização: ${proposal.client_location}`, 20, 120);
+      doc.text(`Nome: ${proposal.client_name}`, 20, 120);
+      if (proposal.client_location) doc.text(`Localização: ${proposal.client_location}`, 20, 127);
+      if (proposal.client_number) doc.text(`Telefone: ${proposal.client_number}`, 20, 134);
       
       // Itens do orçamento
       if (proposal.line_items) {
         const lineItems = JSON.parse(proposal.line_items);
         doc.setFontSize(12);
-        doc.text('ITENS DO ORÇAMENTO:', 20, 140);
+        doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+        doc.text('ITENS DO ORÇAMENTO:', 20, 150);
         
-        let yPos = 150;
+        // Cabeçalho da tabela com fundo colorido
+        doc.setFillColor(accentRgb.r, accentRgb.g, accentRgb.b);
+        doc.rect(20, 155, 170, 8, 'F');
+        
+        let yPos = 160;
         doc.setFontSize(10);
-        doc.text('Descrição', 20, yPos);
-        doc.text('Qtd', 100, yPos);
-        doc.text('Valor Unit.', 130, yPos);
+        doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+        doc.text('Descrição', 22, yPos);
+        doc.text('Qtd', 120, yPos);
+        doc.text('Valor Unit.', 140, yPos);
         doc.text('Total', 170, yPos);
         
-        yPos += 10;
+        yPos += 8;
         lineItems.forEach((item: any) => {
-          doc.text(item.description.substring(0, 30), 20, yPos);
-          doc.text(item.quantity.toString(), 100, yPos);
-          doc.text(`R$ ${item.price.toFixed(2)}`, 130, yPos);
+          if (yPos > 250) { // Nova página se necessário
+            doc.addPage();
+            if (colors.background !== '#ffffff') {
+              doc.setFillColor(colors.background);
+              doc.rect(0, 0, doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight(), 'F');
+            }
+            yPos = 30;
+          }
+          
+          doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+          doc.text(item.description.substring(0, 40), 22, yPos);
+          doc.text(item.quantity.toString(), 120, yPos);
+          doc.text(`R$ ${item.price.toFixed(2)}`, 140, yPos);
           doc.text(`R$ ${(item.quantity * item.price).toFixed(2)}`, 170, yPos);
-          yPos += 8;
+          yPos += 6;
         });
         
-        // Total
+        // Total com destaque
         yPos += 5;
         doc.setFontSize(12);
-        doc.text(`TOTAL GERAL: R$ ${proposal.total.toFixed(2)}`, 130, yPos);
+        doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+        doc.text(`TOTAL GERAL: R$ ${proposal.total.toFixed(2)}`, 140, yPos);
       }
       
       // Termos e condições
-      let termsYPos = 200;
+      let termsYPos = 210;
       if (proposal.deadline || proposal.payment_terms || proposal.observations) {
         doc.setFontSize(12);
+        doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
         doc.text('TERMOS E CONDIÇÕES:', 20, termsYPos);
         termsYPos += 10;
         doc.setFontSize(10);
         
         if (proposal.deadline) {
           doc.text(`Prazo de entrega: ${proposal.deadline}`, 20, termsYPos);
-          termsYPos += 8;
+          termsYPos += 7;
         }
         if (proposal.payment_terms) {
           doc.text(`Condições de pagamento: ${proposal.payment_terms}`, 20, termsYPos);
-          termsYPos += 8;
+          termsYPos += 7;
         }
         if (proposal.observations) {
           const splitText = doc.splitTextToSize(`Observações: ${proposal.observations}`, 170);
@@ -299,8 +382,9 @@ export const DigitalSignature = ({
       }
       
       // Adicionar assinatura
-      const signatureYPos = Math.max(termsYPos + 20, 240);
+      const signatureYPos = Math.max(termsYPos + 15, 240);
       doc.setFontSize(12);
+      doc.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
       doc.text('ASSINATURA DIGITAL:', 20, signatureYPos);
       
       // Converter assinatura para imagem e adicionar ao PDF
@@ -313,13 +397,14 @@ export const DigitalSignature = ({
         ctx.drawImage(img, 0, 0);
         
         const imgData = canvas.toDataURL('image/png');
-        doc.addImage(imgData, 'PNG', 20, signatureYPos + 10, 100, 30);
+        doc.addImage(imgData, 'PNG', 20, signatureYPos + 5, 80, 25);
         
         // Dados da assinatura
         doc.setFontSize(10);
-        doc.text(`Assinado por: ${existingSignature.signer_name}`, 20, signatureYPos + 50);
-        doc.text(`Email: ${existingSignature.signer_email}`, 20, signatureYPos + 60);
-        doc.text(`Data: ${new Date(existingSignature.signed_at).toLocaleString('pt-BR')}`, 20, signatureYPos + 70);
+        doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+        doc.text(`Assinado por: ${existingSignature.signer_name}`, 20, signatureYPos + 35);
+        doc.text(`Email: ${existingSignature.signer_email}`, 20, signatureYPos + 42);
+        doc.text(`Data: ${new Date(existingSignature.signed_at).toLocaleString('pt-BR')}`, 20, signatureYPos + 49);
         
         // Salvar PDF
         const fileName = `${proposal.title.replace(/[^a-zA-Z0-9]/g, '_')}_assinado.pdf`;
@@ -332,9 +417,10 @@ export const DigitalSignature = ({
       img.onerror = () => {
         // Fallback: PDF sem imagem da assinatura
         doc.setFontSize(10);
-        doc.text(`Assinado por: ${existingSignature.signer_name}`, 20, signatureYPos + 20);
-        doc.text(`Email: ${existingSignature.signer_email}`, 20, signatureYPos + 30);
-        doc.text(`Data: ${new Date(existingSignature.signed_at).toLocaleString('pt-BR')}`, 20, signatureYPos + 40);
+        doc.setTextColor(textRgb.r, textRgb.g, textRgb.b);
+        doc.text(`Assinado por: ${existingSignature.signer_name}`, 20, signatureYPos + 15);
+        doc.text(`Email: ${existingSignature.signer_email}`, 20, signatureYPos + 22);
+        doc.text(`Data: ${new Date(existingSignature.signed_at).toLocaleString('pt-BR')}`, 20, signatureYPos + 29);
         
         const fileName = `${proposal.title.replace(/[^a-zA-Z0-9]/g, '_')}_assinado.pdf`;
         doc.save(fileName);

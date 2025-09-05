@@ -99,6 +99,8 @@ export type Database = {
           observations: string | null
           payment_terms: string | null
           status: string
+          template_colors: Json | null
+          template_id: string | null
           title: string
           total: number | null
           user_id: string | null
@@ -119,6 +121,8 @@ export type Database = {
           observations?: string | null
           payment_terms?: string | null
           status?: string
+          template_colors?: Json | null
+          template_id?: string | null
           title: string
           total?: number | null
           user_id?: string | null
@@ -139,6 +143,8 @@ export type Database = {
           observations?: string | null
           payment_terms?: string | null
           status?: string
+          template_colors?: Json | null
+          template_id?: string | null
           title?: string
           total?: number | null
           user_id?: string | null
