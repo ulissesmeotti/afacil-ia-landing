@@ -502,17 +502,17 @@ const ManualProposalsPage = () => {
                   <h2 className="text-3xl font-bold" style={{ color: activeColors.primary }}>ORÇAMENTO</h2>
                   <div className="text-right">
                     <p className="font-semibold" style={{ color: activeColors.text }}>{companyName || "Nome da Sua Empresa"}</p>
-                    {companyEmail && <p className="text-sm opacity-75">{companyEmail}</p>}
-                    {companyNumber && <p className="text-sm opacity-75">{companyNumber}</p>}
-                    {companyCnpj && <p className="text-sm opacity-75">{companyCnpj}</p>}
+                    {companyEmail && <p className="text-sm opacity-75">Email: {companyEmail}</p>}
+                    {companyNumber && <p className="text-sm opacity-75">Telefone: {companyNumber}</p>}
+                    {companyCnpj && <p className="text-sm opacity-75">CNPJ: {companyCnpj}</p>}
                   </div>
                 </div>
                 <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
                 <div>
                   <p className="text-sm font-semibold" style={{ color: activeColors.text }}>Para:</p>
                   <p className="font-medium" style={{ color: activeColors.text }}>{clientName || "Nome do Cliente"}</p>
-                  {clientNumber && <p className="text-sm opacity-75">{clientNumber}</p>}
-                  {clientLocation && <p className="text-sm opacity-75">{clientLocation}</p>}
+                  {clientNumber && <p className="text-sm opacity-75">Telefone: {clientNumber}</p>}
+                  {clientLocation && <p className="text-sm opacity-75">Localização: {clientLocation}</p>}
                 </div>
               </CardHeader>
               <CardContent className="p-0">

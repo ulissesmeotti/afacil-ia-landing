@@ -12,6 +12,11 @@ interface Proposal {
   title: string;
   client_name: string;
   company_name: string;
+  company_email?: string;
+  company_number?: number;
+  company_cnpj?: string;
+  client_number?: number;
+  client_location?: string;
   total: number;
   line_items: string;
   created_at: string;
@@ -80,12 +85,17 @@ const SignaturePage = () => {
             <h3 className="text-lg font-semibold text-gray-700 mb-3">Dados da Empresa</h3>
             <div className="space-y-1">
               <p><span className="font-medium">Empresa:</span> {proposal.company_name || 'Não informado'}</p>
+              {proposal.company_email && <p><span className="font-medium">Email:</span> {proposal.company_email}</p>}
+              {proposal.company_number && <p><span className="font-medium">Telefone:</span> {proposal.company_number}</p>}
+              {proposal.company_cnpj && <p><span className="font-medium">CNPJ:</span> {proposal.company_cnpj}</p>}
             </div>
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-700 mb-3">Dados do Cliente</h3>
             <div className="space-y-1">
               <p><span className="font-medium">Cliente:</span> {proposal.client_name}</p>
+              {proposal.client_number && <p><span className="font-medium">Telefone:</span> {proposal.client_number}</p>}
+              {proposal.client_location && <p><span className="font-medium">Localização:</span> {proposal.client_location}</p>}
             </div>
           </div>
         </div>
