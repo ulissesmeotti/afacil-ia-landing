@@ -18,6 +18,7 @@ declare module "https://esm.sh/stripe@14.21.0" {
     };
     subscriptions: {
       list(params: any): Promise<{ data: any[] }>;
+      update(id: string, params: any): Promise<any>;
     };
     checkout: {
       sessions: {

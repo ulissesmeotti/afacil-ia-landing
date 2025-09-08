@@ -83,6 +83,24 @@ export const useSubscription = () => {
     }
   };
 
+  const cancelSubscription = async () => {
+    if (!session) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-subscription');
+      
+      if (error) {
+        console.error('Error canceling subscription:', error);
+        return { success: false, error: error.message };
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   useEffect(() => {
     checkSubscription();
   }, [session]);
@@ -94,5 +112,6 @@ export const useSubscription = () => {
     checkSubscription,
     createCheckout,
     manageSubscription,
+    cancelSubscription,
   };
 };

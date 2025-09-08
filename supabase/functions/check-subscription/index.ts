@@ -94,6 +94,45 @@ serve(async (req) => {
         subscriptionTier = "pro"; // default fallback
       }
       logStep("Determined subscription tier", { priceId, subscriptionTier });
+
+      // Check if subscription was renewed (current_period_start is recent)
+      const currentPeriodStart = new Date(subscription.current_period_start * 1000);
+      const nowMinus24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      
+      if (currentPeriodStart > nowMinus24Hours) {
+        logStep("Subscription recently renewed, checking if usage should be reset");
+        
+        // Get current subscriber data to check last renewal
+        const { data: currentSubscriber } = await supabaseClient
+          .from("subscribers")
+          .select("subscription_end")
+          .eq("email", user.email)
+          .single();
+        
+        // If subscription_end changed significantly, it's a renewal
+        if (currentSubscriber?.subscription_end) {
+          const lastEnd = new Date(currentSubscriber.subscription_end);
+          const newEnd = new Date(subscriptionEnd);
+          const timeDiff = Math.abs(newEnd.getTime() - lastEnd.getTime());
+          const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+          
+          if (daysDiff > 25) { // More than 25 days difference indicates renewal
+            logStep("Subscription renewed, resetting usage counters");
+            
+            // Reset usage counters in profiles table
+            await supabaseClient
+              .from("profiles")
+              .update({ 
+                ai_usage_count: 0, 
+                manual_usage_count: 0,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", user.id);
+              
+            logStep("Usage counters reset for renewal");
+          }
+        }
+      }
     } else {
       logStep("No active subscription found");
     }

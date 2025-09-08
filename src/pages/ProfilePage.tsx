@@ -38,9 +38,10 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [searchParams] = useSearchParams();
   const { session } = useAuth();
-  const { subscription, isLoading: subscriptionLoading, isCreatingCheckout, checkSubscription, createCheckout, manageSubscription } = useSubscription();
+  const { subscription, isLoading: subscriptionLoading, isCreatingCheckout, checkSubscription, createCheckout, manageSubscription, cancelSubscription } = useSubscription();
 
   // Check if user just returned from successful payment or Stripe portal
   useEffect(() => {
@@ -124,6 +125,28 @@ const ProfilePage = () => {
       await createCheckout(priceId);
     }
   };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Você manterá o acesso até o final do período pago.')) {
+      return;
+    }
+
+    setIsCanceling(true);
+    try {
+      const result = await cancelSubscription();
+      
+      if (result?.success) {
+        toast.success(result.message || 'Assinatura cancelada com sucesso!');
+        checkSubscription(); // Refresh subscription status
+      } else {
+        toast.error(result?.error || 'Erro ao cancelar assinatura');
+      }
+    } catch (error) {
+      toast.error('Erro ao cancelar assinatura');
+    } finally {
+      setIsCanceling(false);
+    }
+  };
   
   if (isLoading || subscriptionLoading) {
     return (
@@ -177,8 +200,16 @@ const ProfilePage = () => {
                   >
                     Gerenciar Assinatura no Stripe
                   </Button>
+                  <Button 
+                    onClick={handleCancelSubscription}
+                    variant="destructive"
+                    className="w-full"
+                    disabled={isCanceling}
+                  >
+                    {isCanceling ? "Cancelando..." : "Cancelar Assinatura"}
+                  </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    No portal do Stripe você pode cancelar, pausar ou alterar sua assinatura
+                    Ao cancelar, você será rebaixado para o Plano Gratuito quando o período pago acabar
                   </p>
                 </div>
               )}
