@@ -196,8 +196,8 @@ const Index = () => {
                     <span>Suporte por email</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6" variant="outline">
-                  Começar Grátis
+                <Button className="w-full mt-6" variant="outline" asChild>
+                  <Link to="/register">Começar Grátis</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -235,8 +235,8 @@ const Index = () => {
                     <span>Suporte prioritário</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6" variant="hero">
-                  Começar Agora
+                <Button className="w-full mt-6" variant="hero" asChild>
+                  <Link to="/register">Começar Agora</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -271,8 +271,8 @@ const Index = () => {
                     <span>Suporte dedicado</span>
                   </li>
                 </ul>
-                <Button className="w-full mt-6" variant="cta">
-                  Falar com Vendas
+                <Button className="w-full mt-6" variant="cta" asChild>
+                  <Link to="/register">Começar Agora</Link>
                 </Button>
               </CardContent>
             </Card>
