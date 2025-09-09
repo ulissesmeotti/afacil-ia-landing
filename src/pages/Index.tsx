@@ -357,6 +357,8 @@ const Index = () => {
                 <li><Link to="/faq" className="hover:text-foreground transition-colors">Central de Ajuda</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground transition-colors">Contato</Link></li>
                 <li><Link to="/status" className="hover:text-foreground transition-colors">Status</Link></li>
+                <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
+                <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
               </ul>
             </div>
           </div>
