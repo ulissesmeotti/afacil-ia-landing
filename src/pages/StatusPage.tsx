@@ -174,7 +174,7 @@ const StatusPage = () => {
               <CardTitle className="text-lg">Tempo de Resposta</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">< 200ms</div>
+              <div className="text-3xl font-bold text-blue-600">&lt; 200ms</div>
               <p className="text-sm text-muted-foreground">Média das APIs</p>
             </CardContent>
           </Card>

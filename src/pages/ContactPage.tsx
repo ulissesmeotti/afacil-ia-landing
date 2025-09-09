@@ -34,9 +34,26 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
     try {
-      // Aqui você pode integrar com seu sistema de email
-      // Por enquanto, vamos simular o envio
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Salvar mensagem na base de dados
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          category: formData.category,
+          subject: formData.subject,
+          message: formData.message
+        });
+
+      if (error) {
+        console.error('Error saving contact message:', error);
+        toast({
+          title: "Erro ao enviar",
+          description: "Tente novamente ou entre em contato por email.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       toast({
         title: "Mensagem enviada!",
@@ -52,6 +69,7 @@ const ContactPage = () => {
         message: ""
       });
     } catch (error) {
+      console.error('Error submitting contact form:', error);
       toast({
         title: "Erro ao enviar",
         description: "Tente novamente ou entre em contato por email.",

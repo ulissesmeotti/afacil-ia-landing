@@ -22,6 +22,10 @@ import SavedProposalsPage from "./pages/SavedProposalsPage";
 import SignaturePage from "./pages/SignaturePage";
 import ProposalDetailsPage from "./pages/ProposalDetailsPage";
 import FAQPage from "./pages/FAQPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import ContactPage from "./pages/ContactPage";
+import StatusPage from "./pages/StatusPage";
 
 const queryClient = new QueryClient();
 
