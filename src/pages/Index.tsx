@@ -354,9 +354,9 @@ const Index = () => {
             <div className="hidden md:block text-left">
               <h3 className="font-semibold mb-4">Suporte</h3>
               <ul className="space-y-2 text-muted-foreground text-sm">
-                <li><a href="#" className="hover:text-foreground transition-colors">Central de Ajuda</a></li>
-                <li><a href="#contact" className="hover:text-foreground transition-colors">Contato</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Status</a></li>
+                <li><Link to="/faq" className="hover:text-foreground transition-colors">Central de Ajuda</Link></li>
+                <li><Link to="/contact" className="hover:text-foreground transition-colors">Contato</Link></li>
+                <li><Link to="/status" className="hover:text-foreground transition-colors">Status</Link></li>
               </ul>
             </div>
           </div>

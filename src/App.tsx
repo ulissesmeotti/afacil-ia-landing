@@ -63,6 +63,10 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/faq" element={<FAQPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/status" element={<StatusPage />} />
             <Route path="/signature/:proposalId" element={<SignaturePage />} />
             <Route path="/perfil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route
