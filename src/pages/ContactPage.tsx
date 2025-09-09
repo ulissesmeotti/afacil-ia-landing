@@ -117,22 +117,6 @@ const ContactPage = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  Chat Online
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Segunda a Sexta, 9h às 18h
-                </p>
-                <Button variant="outline" className="w-full">
-                  Iniciar Chat
-                </Button>
-              </CardContent>
-            </Card>
 
             <Card>
               <CardHeader>
