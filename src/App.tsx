@@ -7,6 +7,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import Layout from "@/components/Layout";
 import AIGenerationPage from "./pages/AIGenerationPage";
 import DemoPage from "./pages/DemoPage";
 import Index from "./pages/Index";
@@ -59,55 +60,57 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/demo" element={<DemoPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/faq" element={<FAQPage />} />
-            <Route path="/termos" element={<TermsPage />} />
-            <Route path="/privacidade" element={<PrivacyPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/status" element={<StatusPage />} />
-            <Route path="/signature/:proposalId" element={<SignaturePage />} />
-            <Route path="/perfil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route
-              path="/propostas"
-              element={
-                <PrivateRoute>
-                  <ProposalsPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/propostas/manual"
-              element={
-                <PrivateRoute>
-                  <ManualProposalsPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/propostas/ia"
-              element={
-                <PrivateRoute>
-                  <AIGenerationPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/propostas/salvas"
-              element={
-                <PrivateRoute>
-                  <SavedProposalsPage />
-                </PrivateRoute>
-              }
-            />
-            <Route path="/propostas/:proposalId" element={<PrivateRoute><ProposalDetailsPage /></PrivateRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/demo" element={<DemoPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/termos" element={<TermsPage />} />
+              <Route path="/privacidade" element={<PrivacyPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/status" element={<StatusPage />} />
+              <Route path="/signature/:proposalId" element={<SignaturePage />} />
+              <Route path="/perfil" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+              <Route
+                path="/propostas"
+                element={
+                  <PrivateRoute>
+                    <ProposalsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/propostas/manual"
+                element={
+                  <PrivateRoute>
+                    <ManualProposalsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/propostas/ia"
+                element={
+                  <PrivateRoute>
+                    <AIGenerationPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/propostas/salvas"
+                element={
+                  <PrivateRoute>
+                    <SavedProposalsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="/propostas/:proposalId" element={<PrivateRoute><ProposalDetailsPage /></PrivateRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
         </AuthProvider>
       </BrowserRouter>
       </TooltipProvider>
