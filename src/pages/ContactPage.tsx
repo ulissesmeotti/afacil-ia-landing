@@ -54,6 +54,27 @@ const ContactPage = () => {
         });
         return;
       }
+
+      // Enviar notificação por email
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-contact-notification', {
+          body: {
+            name: formData.name,
+            email: formData.email,
+            category: formData.category,
+            subject: formData.subject,
+            message: formData.message
+          }
+        });
+
+        if (emailError) {
+          console.error('Error sending email notification:', emailError);
+          // Não falha o processo se o email não for enviado
+        }
+      } catch (emailError) {
+        console.error('Error calling email function:', emailError);
+        // Não falha o processo se o email não for enviado
+      }
       
       toast({
         title: "Mensagem enviada!",
