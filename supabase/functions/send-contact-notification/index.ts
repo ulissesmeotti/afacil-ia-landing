@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Orça Fácil <noreply@orcafacil.com.br>",
-        to: ["suporte@orcafacil.com.br"],
+        to: ["ulissesmeotti@gmail.com"],
         subject: `🔔 Nova Mensagem: ${subject || `Contato de ${name}`} ${category ? `[${category.toUpperCase()}]` : ''}`,
         html: emailTemplate,
         reply_to: email,
