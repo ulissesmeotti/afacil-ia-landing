@@ -256,12 +256,22 @@ const AIGenerationPage = () => {
       const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
       const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
       
+      // Set a fixed height for better PDF generation
+      const originalHeight = proposalRef.current.style.height;
+      proposalRef.current.style.height = 'auto';
+      
       html2canvas(proposalRef.current, { 
         scale: 2, 
         backgroundColor: bgColor,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        height: proposalRef.current.scrollHeight,
+        windowWidth: proposalRef.current.scrollWidth,
+        windowHeight: proposalRef.current.scrollHeight
       }).then((canvas) => {
+        // Restore original height
+        proposalRef.current!.style.height = originalHeight;
+        
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -269,14 +279,51 @@ const AIGenerationPage = () => {
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
         
-        // Remove margens - ocupa toda a largura
-        const imgX = 0;
-        const imgY = 0;
-        const finalWidth = pdfWidth;
-        const finalHeight = (imgHeight * finalWidth) / imgWidth;
+        // Calculate dimensions to fit the content properly
+        const ratio = Math.min(pdfWidth / (imgWidth / 2), pdfHeight / (imgHeight / 2));
+        const finalWidth = (imgWidth / 2) * ratio;
+        const finalHeight = (imgHeight / 2) * ratio;
         
-        pdf.addImage(imgData, "PNG", imgX, imgY, finalWidth, finalHeight);
+        // Center the content
+        const x = (pdfWidth - finalWidth) / 2;
+        const y = 0;
+        
+        // If content is taller than one page, split it
+        if (finalHeight > pdfHeight) {
+          let currentY = 0;
+          let pageCount = 0;
+          
+          while (currentY < finalHeight) {
+            if (pageCount > 0) {
+              pdf.addPage();
+            }
+            
+            const remainingHeight = finalHeight - currentY;
+            const pageHeight = Math.min(pdfHeight, remainingHeight);
+            
+            pdf.addImage(
+              imgData, 
+              "PNG", 
+              x, 
+              -currentY, 
+              finalWidth, 
+              finalHeight
+            );
+            
+            currentY += pdfHeight;
+            pageCount++;
+          }
+        } else {
+          pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
+        }
+        
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
+        toast.success("PDF baixado com sucesso!");
+      }).catch((error) => {
+        // Restore original height in case of error
+        proposalRef.current!.style.height = originalHeight;
+        console.error("Erro ao gerar PDF:", error);
+        toast.error("Erro ao gerar PDF. Tente novamente.");
       });
     }
   };
@@ -537,18 +584,18 @@ const AIGenerationPage = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                   <h2 className="text-2xl md:text-3xl font-bold" style={{ color: activeColors.primary }}>ORÇAMENTO</h2>
                   <div className="text-left sm:text-right w-full sm:w-auto">
-                    <p className="font-semibold text-sm md:text-base" style={{ color: activeColors.text }}>{companyName || "Nome da Sua Empresa"}</p>
-                    <p className="text-xs md:text-sm opacity-75">{companyEmail || "Seu Email"}</p>
-                    <p className="text-xs md:text-sm opacity-75">{companyNumber || "Seu Telefone"}</p>
-                    <p className="text-xs md:text-sm opacity-75">{companyCnpj || "Seu CNPJ"}</p>
+                    <p className="font-semibold text-sm md:text-base" style={{ color: activeColors.text }}>{companyName}</p>
+                    {companyEmail && <p className="text-xs md:text-sm opacity-75">{companyEmail}</p>}
+                    {companyNumber && <p className="text-xs md:text-sm opacity-75">{companyNumber}</p>}
+                    {companyCnpj && <p className="text-xs md:text-sm opacity-75">{companyCnpj}</p>}
                   </div>
                 </div>
                 <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
                 <div>
                   <p className="text-sm font-semibold" style={{ color: activeColors.text }}>Para:</p>
-                  <p className="font-medium" style={{ color: activeColors.text }}>{clientName || "Nome do Cliente"}</p>
-                  <p className="text-xs md:text-sm opacity-75">{clientNumber || "Telefone do Cliente"}</p>
-                  <p className="text-xs md:text-sm opacity-75">{clientLocation || "Localização do Cliente"}</p>
+                  <p className="font-medium" style={{ color: activeColors.text }}>{clientName}</p>
+                  {clientNumber && <p className="text-xs md:text-sm opacity-75">{clientNumber}</p>}
+                  {clientLocation && <p className="text-xs md:text-sm opacity-75">{clientLocation}</p>}
                 </div>
               </CardHeader>
             <CardContent className="p-0">
@@ -576,21 +623,30 @@ const AIGenerationPage = () => {
                   <p className="text-lg md:text-xl font-semibold" style={{ color: activeColors.text }}>Total: R$ {calculateTotal.toFixed(2)}</p>
                 </div>
               </div>
-              <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
-              <div>
-                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Prazo de Entrega:</p>
-                <p className="text-xs md:text-sm opacity-75">{deadline}</p>
-              </div>
-              <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
-              <div>
-                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Condições de Pagamento:</p>
-                <p className="text-xs md:text-sm opacity-75">{paymentTerms}</p>
-              </div>
-              <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
-              <div>
-                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Observações:</p>
-                <p className="text-xs md:text-sm opacity-75">{observations}</p>
-              </div>
+              {deadline && (
+                <>
+                  <div>
+                    <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Prazo de Entrega:</p>
+                    <p className="text-xs md:text-sm opacity-75">{deadline}</p>
+                  </div>
+                  <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
+                </>
+              )}
+              {paymentTerms && (
+                <>
+                  <div>
+                    <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Condições de Pagamento:</p>
+                    <p className="text-xs md:text-sm opacity-75">{paymentTerms}</p>
+                  </div>
+                  <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
+                </>
+              )}
+              {observations && (
+                <div>
+                  <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Observações:</p>
+                  <p className="text-xs md:text-sm opacity-75">{observations}</p>
+                </div>
+              )}
             </CardContent>
             </Card>
           </div>

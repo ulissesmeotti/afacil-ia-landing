@@ -263,9 +263,15 @@ const SavedProposalsPage = () => {
                 <Link to="/propostas/manual">
                   <Button>Criar Orçamento Manual</Button>
                 </Link>
-                <Link to="/propostas/ai">
-                  <Button variant="outline">Criar com IA</Button>
-                </Link>
+                {planDetails.aiLimit > 0 ? (
+                  <Link to="/propostas/ia">
+                    <Button variant="outline">Criar com IA</Button>
+                  </Link>
+                ) : (
+                  <Link to="/perfil">
+                    <Button variant="outline">Upgrade para usar IA</Button>
+                  </Link>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -314,9 +320,15 @@ const SavedProposalsPage = () => {
                       <Link to="/propostas/manual">
                         <Button>Criar Orçamento Manual</Button>
                       </Link>
-                      <Link to="/propostas/ia">
-                        <Button variant="outline">Criar com IA</Button>
-                      </Link>
+                      {planDetails.aiLimit > 0 ? (
+                        <Link to="/propostas/ia">
+                          <Button variant="outline">Criar com IA</Button>
+                        </Link>
+                      ) : (
+                        <Link to="/perfil">
+                          <Button variant="outline">Upgrade para usar IA</Button>
+                        </Link>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

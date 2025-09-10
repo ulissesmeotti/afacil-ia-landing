@@ -45,17 +45,33 @@ const ProfilePage = () => {
 
   // Check if user just returned from successful payment or Stripe portal
   useEffect(() => {
-    if (searchParams.get('success')) {
+    const success = searchParams.get('success');
+    const cancelled = searchParams.get('cancelled');
+    const stripePortal = searchParams.get('stripe_portal');
+    
+    if (success) {
       toast.success("Pagamento realizado! Sua assinatura foi ativada com sucesso.");
       checkSubscription();
-    } else if (searchParams.get('cancelled')) {
+      // Remove success parameter from URL to prevent repeated messages
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('success');
+      window.history.replaceState({}, '', `${window.location.pathname}${newSearchParams.toString() ? '?' + newSearchParams.toString() : ''}`);
+    } else if (cancelled) {
       toast.error("Pagamento cancelado. O processo de pagamento foi cancelado.");
-    } else if (searchParams.get('stripe_portal')) {
+      // Remove cancelled parameter from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('cancelled');
+      window.history.replaceState({}, '', `${window.location.pathname}${newSearchParams.toString() ? '?' + newSearchParams.toString() : ''}`);
+    } else if (stripePortal) {
       toast.info("Verificando alterações na assinatura...");
       // Wait a bit for Stripe to process changes then refresh
       setTimeout(() => {
         checkSubscription();
       }, 1000);
+      // Remove stripe_portal parameter from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('stripe_portal');
+      window.history.replaceState({}, '', `${window.location.pathname}${newSearchParams.toString() ? '?' + newSearchParams.toString() : ''}`);
     }
   }, [searchParams, checkSubscription]);
 
