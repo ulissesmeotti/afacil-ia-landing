@@ -113,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: "Orça Fácil <noreply@orcafacil.com.br>",
+        from: "Orça Fácil <onboarding@resend.dev>",
         to: ["ulissesmeotti@gmail.com"],
         subject: `🔔 Nova Mensagem: ${subject || `Contato de ${name}`} ${category ? `[${category.toUpperCase()}]` : ''}`,
         html: emailTemplate,
