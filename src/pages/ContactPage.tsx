@@ -55,9 +55,9 @@ const ContactPage = () => {
         return;
       }
 
-      // Enviar notificação por email
+      // Enviar email via EmailJS
       try {
-        const { error: emailError } = await supabase.functions.invoke('send-contact-notification', {
+        const { error: emailError } = await supabase.functions.invoke('send-contact-emailjs', {
           body: {
             name: formData.name,
             email: formData.email,
@@ -68,11 +68,11 @@ const ContactPage = () => {
         });
 
         if (emailError) {
-          console.error('Error sending email notification:', emailError);
+          console.error('Error sending email via EmailJS:', emailError);
           // Não falha o processo se o email não for enviado
         }
       } catch (emailError) {
-        console.error('Error calling email function:', emailError);
+        console.error('Error calling EmailJS function:', emailError);
         // Não falha o processo se o email não for enviado
       }
       
