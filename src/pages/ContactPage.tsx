@@ -1,14 +1,14 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Header from "@/components/ui/header";
-import { Mail, MessageSquare, Phone, MapPin, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { useState } from "react";
 
 const ContactPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,12 +75,12 @@ const ContactPage = () => {
         console.error('Error calling EmailJS function:', emailError);
         // Não falha o processo se o email não for enviado
       }
-      
+
       toast({
         title: "Mensagem enviada!",
         description: "Recebemos sua mensagem e responderemos em até 24 horas.",
       });
-      
+
       // Limpar formulário
       setFormData({
         name: "",
@@ -246,9 +246,9 @@ const ContactPage = () => {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

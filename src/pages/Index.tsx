@@ -1,4 +1,3 @@
-import heroDashboard from "@/assets/hero-dashboard.jpg";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -310,64 +309,7 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer id="contact" className="bg-muted/50 py-6 md:py-12 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:grid md:grid-cols-4 gap-6 md:gap-8">
-            <div className="text-center md:text-left md:col-span-2">
-              <div className="flex items-center justify-center md:justify-start space-x-2 mb-3">
-                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-primary to-primary-glow rounded-lg flex items-center justify-center">
-                  <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-white" />
-                </div>
-                <span className="text-lg md:text-xl font-bold">OrçaFacil IA</span>
-              </div>
-              <p className="text-muted-foreground text-xs md:text-sm max-w-md mx-auto md:mx-0">
-                A solução completa para orçamentos profissionais com Inteligência Artificial
-              </p>
-            </div>
-            
-            {/* Mobile: Links em linha horizontal */}
-            <div className="md:hidden flex justify-center space-x-6 text-xs">
-              <div className="space-y-1">
-                <a href="#features" className="block text-muted-foreground hover:text-foreground transition-colors">Recursos</a>
-                <a href="#pricing" className="block text-muted-foreground hover:text-foreground transition-colors">Preços</a>
-                <a href="#contact" className="block text-muted-foreground hover:text-foreground transition-colors">Contato</a>
-              </div>
-              <div className="space-y-1">
-                <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Ajuda</a>
-                <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Sobre</a>
-                <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Blog</a>
-              </div>
-            </div>
-            
-            {/* Desktop: Layout original */}
-            <div className="hidden md:block text-left">
-              <h3 className="font-semibold mb-4">Produto</h3>
-              <ul className="space-y-2 text-muted-foreground text-sm">
-                <li><a href="#features" className="hover:text-foreground transition-colors">Recursos</a></li>
-                <li><a href="#pricing" className="hover:text-foreground transition-colors">Preços</a></li>
-                <li><a href="#" className="hover:text-foreground transition-colors">Integrações</a></li>
-              </ul>
-            </div>
-            
-            <div className="hidden md:block text-left">
-              <h3 className="font-semibold mb-4">Suporte</h3>
-              <ul className="space-y-2 text-muted-foreground text-sm">
-                <li><Link to="/faq" className="hover:text-foreground transition-colors">Central de Ajuda</Link></li>
-                <li><Link to="/contact" className="hover:text-foreground transition-colors">Contato</Link></li>
-                <li><Link to="/status" className="hover:text-foreground transition-colors">Status</Link></li>
-                <li><Link to="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link></li>
-                <li><Link to="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t mt-4 md:mt-8 pt-4 md:pt-8 text-center text-muted-foreground text-xs md:text-sm">
-            <p>&copy; 2024 OrçaFacil IA. Todos os direitos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      
     </div>
   );
 };

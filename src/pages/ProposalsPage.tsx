@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Header from "@/components/ui/header";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { useAuth } from "@/providers/auth-provider";
-import { Brain, FileText, ListTodo, Star, Zap } from "lucide-react";
+import { Brain, FileText, ListTodo } from "lucide-react";
 import { Link } from "react-router-dom"; // Adicione este import
 
 const ProposalsPage = () => {
@@ -121,7 +121,7 @@ const ProposalsPage = () => {
             
             <div className="text-center relative">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center mx-auto mb-6 shadow-lg relative z-10">
-                <span className="text-white font-bold text-xl">3</span>
+                <span className="text-black font-bold text-xl">3</span>
               </div>
               <h3 className="font-bold text-lg mb-3">Baixe o orçamento</h3>
               <p className="text-muted-foreground">Revise, personalize e baixe seu orçamento em PDF profissional pronto para envio</p>
@@ -130,12 +130,12 @@ const ProposalsPage = () => {
         </div>
 
         {/* Separador visual */}
-        <div className="mt-24 mb-20">
+        {/* <div className="mt-24 mb-20">
           <div className="w-24 h-1 bg-gradient-to-r from-primary to-secondary rounded-full mx-auto"></div>
-        </div>
+        </div> */}
 
         {/* Principais benefícios */}
-        <div className="mt-20">
+        {/* <div className="mt-20">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Principais benefícios</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -175,7 +175,7 @@ const ProposalsPage = () => {
               <p className="text-muted-foreground">Salve, gerencie e acesse todos seus orçamentos na nuvem</p>
             </Card>
           </div>
-        </div>
+        </div> */}
 
       </div>
     </div>

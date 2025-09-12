@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
-import { HelpCircle, Mail, MessageCircle } from "lucide-react";
+import { HelpCircle, Mail } from "lucide-react";
 
 const FAQPage = () => {
   return (
@@ -128,7 +127,7 @@ const FAQPage = () => {
                     suporte@orcaai.com.br
                   </a>
                 </Card>
-
+                {/* 
                 <Card className="p-6 hover:shadow-lg transition-all duration-300">
                   <div className="flex items-center gap-3 mb-3">
                     <MessageCircle className="h-5 w-5 text-secondary" />
@@ -140,7 +139,7 @@ const FAQPage = () => {
                   <Button variant="outline" size="sm" className="w-full">
                     Iniciar Chat
                   </Button>
-                </Card>
+                </Card> */}
               </div>
 
               <div className="pt-4 border-t border-border/50">

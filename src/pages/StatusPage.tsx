@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
-import { CheckCircle, AlertCircle, XCircle, Clock, Zap, Database, Shield, Mail, MessageSquare, Phone } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Database, Mail, Shield, XCircle, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ServiceStatus {
   name: string;
@@ -230,14 +230,14 @@ const StatusPage = () => {
                 <Mail className="h-4 w-4" />
                 <a href="mailto:suporte@orcafacil.com.br" className="text-primary hover:underline">suporte@orcafacil.com.br</a>
               </p>
-              <p className="flex items-center gap-2">
+              {/* <p className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Chat no canto inferior direito da plataforma
-              </p>
-              <p className="flex items-center gap-2">
+              </p> */}
+              {/* <p className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
                 WhatsApp: (11) 9999-9999
-              </p>
+              </p> */}
             </div>
           </CardContent>
         </Card>
