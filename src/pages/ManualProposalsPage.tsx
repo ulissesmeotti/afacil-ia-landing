@@ -4,16 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Download, Plus, Save, Trash2, Palette } from "lucide-react";
+import { Download, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -271,21 +271,21 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="companyName">Nome da Empresa</Label>
-                    <Input id="companyName" value={companyName} onChange={(e) => { setCompanyName(e.target.value); setIsSaved(false); }} />
+                    <Input id="companyName" value={companyName} onChange={(e) => { setCompanyName(e.target.value); setIsSaved(false); }} maxLength={35} />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="companyNumber">Seu Número</Label>
-                      <Input id="companyNumber" placeholder="(XX) XXXXX-XXXX" value={companyNumber} onChange={(e) => { setCompanyNumber(e.target.value); setIsSaved(false); }} />
+                      <Input id="companyNumber" placeholder="(XX) XXXXX-XXXX" value={companyNumber} onChange={(e) => { setCompanyNumber(e.target.value); setIsSaved(false); }} maxLength={15} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="companyCnpj">Seu CNPJ</Label>
-                      <Input id="companyCnpj" placeholder="XX.XXX.XXX/XXXX-XX" value={companyCnpj} onChange={(e) => { setCompanyCnpj(e.target.value); setIsSaved(false); }} />
+                      <Input id="companyCnpj" placeholder="XX.XXX.XXX/XXXX-XX" value={companyCnpj} onChange={(e) => { setCompanyCnpj(e.target.value); setIsSaved(false); }} maxLength={19} />
                     </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="companyEmail">Seu Email</Label>
-                    <Input id="companyEmail" type="email" placeholder="contato@orcafacil.com" value={companyEmail} onChange={(e) => { setCompanyEmail(e.target.value); setIsSaved(false); }} />
+                    <Input id="companyEmail" type="email" placeholder="contato@orcafacil.com" value={companyEmail} onChange={(e) => { setCompanyEmail(e.target.value); setIsSaved(false); }} maxLength={100} />
                   </div>
                 </CardContent>
               </Card>
@@ -298,16 +298,16 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="clientName">Nome do Cliente</Label>
-                    <Input id="clientName" value={clientName} onChange={(e) => { setClientName(e.target.value); setIsSaved(false); }} />
+                    <Input id="clientName" value={clientName} onChange={(e) => { setClientName(e.target.value); setIsSaved(false); }} maxLength={40} />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="clientNumber">Número do Cliente</Label>
-                      <Input id="clientNumber" placeholder="(XX) XXXXX-XXXX" value={clientNumber} onChange={(e) => { setClientNumber(e.target.value); setIsSaved(false); }} />
+                      <Input id="clientNumber" placeholder="(XX) XXXXX-XXXX" value={clientNumber} onChange={(e) => { setClientNumber(e.target.value); setIsSaved(false); }} maxLength={15} />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="clientLocation">Localização do Cliente</Label>
-                      <Input id="clientLocation" placeholder="Ex: São Paulo, SP" value={clientLocation} onChange={(e) => { setClientLocation(e.target.value); setIsSaved(false); }} />
+                      <Input id="clientLocation" placeholder="Ex: São Paulo, SP" value={clientLocation} onChange={(e) => { setClientLocation(e.target.value); setIsSaved(false); }} maxLength={50} />
                     </div>
                   </div>
                 </CardContent>
@@ -321,7 +321,7 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="proposalTitle">Título</Label>
-                    <Input id="proposalTitle" value={proposalTitle} onChange={(e) => { setProposalTitle(e.target.value); setIsSaved(false); }} />
+                    <Input id="proposalTitle" value={proposalTitle} onChange={(e) => { setProposalTitle(e.target.value); setIsSaved(false); }} maxLength={60} />
                   </div>
                   <div className="space-y-4">
                     <Label>Itens</Label>
@@ -332,6 +332,7 @@ const ManualProposalsPage = () => {
                           <Input
                             value={item.description}
                             onChange={(e) => handleLineItemChange(index, "description", e.target.value)}
+                            maxLength={255}
                           />
                         </div>
                         <div className="w-24">
@@ -373,15 +374,15 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="deadline">Prazo de Entrega</Label>
-                    <Input id="deadline" value={deadline} onChange={(e) => { setDeadline(e.target.value); setIsSaved(false); }} />
+                    <Input id="deadline" value={deadline} onChange={(e) => { setDeadline(e.target.value); setIsSaved(false); }} maxLength={50} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="paymentTerms">Condições de Pagamento</Label>
-                    <Input id="paymentTerms" value={paymentTerms} onChange={(e) => { setPaymentTerms(e.target.value); setIsSaved(false); }} />
+                    <Input id="paymentTerms" value={paymentTerms} onChange={(e) => { setPaymentTerms(e.target.value); setIsSaved(false); }} maxLength={100} />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="observations">Observações</Label>
-                    <Textarea id="observations" rows={4} value={observations} onChange={(e) => { setObservations(e.target.value); setIsSaved(false); }} />
+                    <Textarea id="observations" rows={4} value={observations} onChange={(e) => { setObservations(e.target.value); setIsSaved(false); }} maxLength={150} />
                   </div>
                 </CardContent>
               </Card>

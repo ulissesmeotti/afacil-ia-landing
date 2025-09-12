@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
-import { useSubscription } from "@/hooks/useSubscription";
 import { ArrowLeft, Check, Crown, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -209,13 +209,13 @@ const ProfilePage = () => {
               <p>Uso de Orçamentos com IA: <span className="font-semibold">{profile?.ai_usage_count || 0} / {planDetails?.aiLimit === Infinity ? "Ilimitado" : planDetails?.aiLimit}</span></p>
               {subscription.subscribed && (
                 <div className="pt-4 border-t space-y-2">
-                  <Button 
+                  {/* <Button 
                     onClick={manageSubscription}
                     variant="outline"
                     className="w-full"
                   >
                     Gerenciar Assinatura no Stripe
-                  </Button>
+                  </Button> */}
                   <Button 
                     onClick={handleCancelSubscription}
                     variant="destructive"
