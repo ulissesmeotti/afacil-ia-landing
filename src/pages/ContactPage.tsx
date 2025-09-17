@@ -34,8 +34,8 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
     try {
-      // Salvar mensagem na base de dados
-      const { error } = await supabase
+      // Passo 1: Salvar mensagem na base de dados
+      const { error: dbError } = await supabase
         .from('contact_messages')
         .insert({
           name: formData.name,
@@ -45,35 +45,63 @@ const ContactPage = () => {
           message: formData.message
         });
 
-      if (error) {
-        console.error('Error saving contact message:', error);
+      if (dbError) {
+        console.error('Error saving contact message:', dbError);
         toast({
           title: "Erro ao enviar",
-          description: "Tente novamente ou entre em contato por email.",
+          description: "Não foi possível salvar a mensagem. Tente novamente.",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
+      
+      // Passo 2: Enviar email de resposta ao cliente (usando EmailJS)
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        category: formData.category,
+        subject: formData.subject,
+        message: formData.message,
+        to_email: "ulissesmeotti@gmail.com",
+        reply_to: formData.email
+      };
 
-      // Enviar email via EmailJS
+      const emailjsResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          service_id: 'service_saas',
+          template_id: 'template_4303fes',
+          user_id: '_zmVVnlz9wGKRHCsx',
+          template_params: templateParams
+        }),
+      });
+      
+      if (!emailjsResponse.ok) {
+        const errorData = await emailjsResponse.text();
+        console.error("EmailJS API error:", emailjsResponse.status, errorData);
+        // Não jogamos erro aqui para não travar o processo, já que o e-mail para o cliente é secundário
+      }
+
+      // Passo 3: Enviar notificação para o suporte (usando a função do Supabase)
       try {
-        const { error: emailError } = await supabase.functions.invoke('send-contact-emailjs', {
+        const { error: notificationError } = await supabase.functions.invoke('send-contact-notification', {
           body: {
             name: formData.name,
             email: formData.email,
             category: formData.category,
             subject: formData.subject,
-            message: formData.message
-          }
+            message: formData.message,
+          },
         });
-
-        if (emailError) {
-          console.error('Error sending email via EmailJS:', emailError);
-          // Não falha o processo se o email não for enviado
+        if (notificationError) {
+           console.error('Error sending notification email:', notificationError);
         }
-      } catch (emailError) {
-        console.error('Error calling EmailJS function:', emailError);
-        // Não falha o processo se o email não for enviado
+      } catch (notificationError) {
+        console.error('Error calling send-contact-notification function:', notificationError);
       }
 
       toast({
@@ -93,7 +121,7 @@ const ContactPage = () => {
       console.error('Error submitting contact form:', error);
       toast({
         title: "Erro ao enviar",
-        description: "Tente novamente ou entre em contato por email.",
+        description: "Ocorreu um problema inesperado. Tente novamente ou entre em contato por e-mail.",
         variant: "destructive",
       });
     } finally {

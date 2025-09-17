@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ContactEmailRequest {
@@ -14,8 +13,7 @@ interface ContactEmailRequest {
   message: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
+serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,68 +21,57 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, category, subject, message }: ContactEmailRequest = await req.json();
 
-    console.log("Sending contact email via EmailJS:", { name, email, category, subject });
+    console.log("Dados recebidos:", { name, email, category, subject, message });
 
-    // Prepare EmailJS template parameters
     const templateParams = {
       from_name: name,
       from_email: email,
-      category: category,
-      subject: subject,
-      message: message,
+      category,
+      subject,
+      message,
       to_email: "ulissesmeotti@gmail.com",
-      reply_to: email
+      reply_to: email,
     };
 
-    // Send email via EmailJS API
-    const emailjsResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
+    const body = {
+      service_id: Deno.env.get("EMAILJS_SERVICE_ID"),
+      template_id: Deno.env.get("EMAILJS_TEMPLATE_ID"),
+      user_id: Deno.env.get("EMAILJS_USER_ID"),
+      accessToken: Deno.env.get("EMAILJS_PRIVATE_KEY"),
+      template_params: templateParams,
+    };
+
+    console.log("Enviando email via EmailJS:", body);
+
+    const emailjsResponse = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        service_id: 'service_saas',
-        template_id: 'template_4303fes',
-        user_id: '_zmVVnlz9wGKRHCsx',
-        accessToken: Deno.env.get("EMAILJS_PRIVATE_KEY"),
-        template_params: templateParams
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!emailjsResponse.ok) {
-      const errorData = await emailjsResponse.text();
-      console.error("EmailJS API error:", emailjsResponse.status, errorData);
-      throw new Error(`EmailJS API error: ${emailjsResponse.status} - ${errorData}`);
-    }
-
-    const result = await emailjsResponse.text();
-    console.log("Contact email sent successfully via EmailJS:", result);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: "Email enviado com sucesso via EmailJS",
-      result: result 
-    }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error in send-contact-emailjs function:", error);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message,
-        message: "Erro ao enviar email via EmailJS" 
-      }),
-      {
+      const errorText = await emailjsResponse.text();
+      console.error("Erro na API EmailJS:", errorText);
+      return new Response(JSON.stringify({ success: false, error: errorText }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
-  }
-};
+      });
+    }
 
-serve(handler);
+    const result = await emailjsResponse.json();
+    console.log("Email enviado com sucesso:", result);
+
+    return new Response(JSON.stringify({ success: true, result }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error) {
+    console.error("Erro na função send-contact-emailjs:", error.message);
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+});
