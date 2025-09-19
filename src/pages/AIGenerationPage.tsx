@@ -4,16 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Download, Plus, Save, Trash2, Wand2, Palette } from "lucide-react";
+import { Download, Plus, Save, Trash2, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -256,22 +256,26 @@ const AIGenerationPage = () => {
       const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
       const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
       
-      // Set a fixed height for better PDF generation
-      const originalHeight = proposalRef.current.style.height;
-      proposalRef.current.style.height = 'auto';
-      
-      html2canvas(proposalRef.current, { 
+      const element = proposalRef.current;
+      const originalWidth = element.style.width;
+      const originalHeight = element.style.height;
+
+      // Forçar renderização em uma largura fixa e alta para garantir qualidade
+      element.style.width = '800px'; 
+      element.style.height = 'auto';
+
+      html2canvas(element, { 
         scale: 2, 
         backgroundColor: bgColor,
         useCORS: true,
         allowTaint: true,
-        height: proposalRef.current.scrollHeight,
-        windowWidth: proposalRef.current.scrollWidth,
-        windowHeight: proposalRef.current.scrollHeight
+        windowWidth: 800,
+        windowHeight: element.scrollHeight
       }).then((canvas) => {
-        // Restore original height
-        proposalRef.current!.style.height = originalHeight;
-        
+        // Restaurar largura e altura originais
+        element.style.width = originalWidth;
+        element.style.height = originalHeight;
+
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -279,49 +283,18 @@ const AIGenerationPage = () => {
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
         
-        // Calculate dimensions to fit the content properly
-        const ratio = Math.min(pdfWidth / (imgWidth / 2), pdfHeight / (imgHeight / 2));
-        const finalWidth = (imgWidth / 2) * ratio;
-        const finalHeight = (imgHeight / 2) * ratio;
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
         
-        // Center the content
-        const x = (pdfWidth - finalWidth) / 2;
-        const y = 0;
-        
-        // If content is taller than one page, split it
-        if (finalHeight > pdfHeight) {
-          let currentY = 0;
-          let pageCount = 0;
-          
-          while (currentY < finalHeight) {
-            if (pageCount > 0) {
-              pdf.addPage();
-            }
-            
-            const remainingHeight = finalHeight - currentY;
-            const pageHeight = Math.min(pdfHeight, remainingHeight);
-            
-            pdf.addImage(
-              imgData, 
-              "PNG", 
-              x, 
-              -currentY, 
-              finalWidth, 
-              finalHeight
-            );
-            
-            currentY += pdfHeight;
-            pageCount++;
-          }
-        } else {
-          pdf.addImage(imgData, "PNG", x, y, finalWidth, finalHeight);
-        }
+        pdf.addImage(imgData, "PNG", 0, 0, finalWidth, finalHeight);
         
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
         toast.success("PDF baixado com sucesso!");
       }).catch((error) => {
-        // Restore original height in case of error
-        proposalRef.current!.style.height = originalHeight;
+        // Restaurar largura e altura em caso de erro
+        element.style.width = originalWidth;
+        element.style.height = originalHeight;
         console.error("Erro ao gerar PDF:", error);
         toast.error("Erro ao gerar PDF. Tente novamente.");
       });

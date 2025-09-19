@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/ui/header";
+import { Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const TermsPage = () => {
@@ -60,7 +61,7 @@ const TermsPage = () => {
 
             <h2>7. Privacidade e Dados</h2>
             <p>
-              O uso de seus dados pessoais é regido por nossa <Link to="/privacy" className="text-primary hover:underline">Política de Privacidade</Link>.
+              O uso de seus dados pessoais é regido por nossa <Link to="/privacidade" className="text-primary hover:underline">Política de Privacidade</Link>.
             </p>
 
             <h2>8. Limitação de Responsabilidade</h2>
@@ -84,9 +85,13 @@ const TermsPage = () => {
             <h2>11. Contato</h2>
             <p>
               Para dúvidas sobre estes termos, entre em contato: 
-              <a href="mailto:suporte@orcafacil.com.br" className="text-primary hover:underline ml-1">
-                suporte@orcafacil.com.br
-              </a>
+              <Link
+                to="/contact"
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                Contato
+              </Link>
             </p>
 
             <div className="mt-8 p-4 bg-muted rounded-lg">

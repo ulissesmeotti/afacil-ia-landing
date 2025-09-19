@@ -1,10 +1,33 @@
+// src/pages/Index.tsx
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Check, Clock, HeadphonesIcon, Shield, Star, Users, Zap } from "lucide-react";
-import { Link } from "react-router-dom"; // Adicione este import
+import { useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { toast } from "sonner"; // Use a biblioteca sonner para os toasts
 
 const Index = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    // Verifica se há o parâmetro de sucesso na URL
+    const paymentSuccess = searchParams.get('payment_success');
+    const hasShownToast = sessionStorage.getItem('payment_success_toast_shown');
+
+    if (paymentSuccess && !hasShownToast) {
+      toast.success("Pagamento realizado! Sua assinatura foi ativada com sucesso.");
+      
+      // Define a flag no sessionStorage para que a mensagem não seja exibida novamente
+      sessionStorage.setItem('payment_success_toast_shown', 'true');
+      
+      // Limpa a URL para que a mensagem não apareça ao recarregar a página
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('payment_success');
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}

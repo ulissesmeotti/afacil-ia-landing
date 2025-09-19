@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, ArrowRight, Check, X, Zap, FileText, Users, BarChart3 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/providers/auth-provider";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/providers/auth-provider";
+import { ArrowLeft, ArrowRight, BarChart3, Check, FileText, Users, X, Zap } from "lucide-react";
+import { useState } from "react";
 
 interface OnboardingStep {
   id: string;
@@ -17,7 +16,7 @@ interface OnboardingStep {
 const onboardingSteps: OnboardingStep[] = [
   {
     id: "welcome",
-    title: "Bem-vindo ao OrçaFacil IA! ��",
+    title: "Bem-vindo ao OrçaFacil IA!",
     description: "Vamos te ensinar como criar orçamentos profissionais em minutos",
     icon: <Zap className="h-8 w-8 text-primary" />,
     content: (
@@ -31,7 +30,6 @@ const onboardingSteps: OnboardingStep[] = [
             <li>• Como usar a IA para gerar orçamentos</li>
             <li>• Como criar orçamentos manuais</li>
             <li>• Como gerenciar seus clientes e propostas</li>
-            <li>• Como usar assinatura digital</li>
           </ul>
         </div>
       </div>
@@ -111,11 +109,11 @@ const onboardingSteps: OnboardingStep[] = [
             </div>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center">2</div>
-              <span>Cliente assina digitalmente</span>
+              <span>Cliente responde de forma prática</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center">3</div>
-              <span>Você recebe notificação automática</span>
+              <span>Você coloca como proposta aceita</span>
             </div>
           </div>
         </div>

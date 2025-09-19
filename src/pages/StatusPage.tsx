@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Header from "@/components/ui/header";
 import { AlertCircle, CheckCircle, Clock, Database, Mail, Shield, XCircle, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 interface ServiceStatus {
   name: string;
@@ -51,7 +52,7 @@ const StatusPage = () => {
     const checkServices = () => {
       const hasOutage = services.some(s => s.status === "outage");
       const hasIssues = services.some(s => s.status === "degraded" || s.status === "maintenance");
-      
+
       if (hasOutage) {
         setOverallStatus("outage");
       } else if (hasIssues) {
@@ -226,10 +227,13 @@ const StatusPage = () => {
               Está enfrentando problemas? Entre em contato conosco:
             </p>
             <div className="space-y-2">
-              <p className="flex items-center gap-2">
+              <Link
+                to="/contact"
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+              >
                 <Mail className="h-4 w-4" />
-                <a href="mailto:suporte@orcafacil.com.br" className="text-primary hover:underline">suporte@orcafacil.com.br</a>
-              </p>
+                Contato
+              </Link>
               {/* <p className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Chat no canto inferior direito da plataforma

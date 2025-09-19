@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useState } from "react";
 
 const ContactPage = () => {
@@ -34,7 +34,7 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
     try {
-      // Passo 1: Salvar mensagem na base de dados
+      // Parte 1: Salvar mensagem na base de dados
       const { error: dbError } = await supabase
         .from('contact_messages')
         .insert({
@@ -56,7 +56,7 @@ const ContactPage = () => {
         return;
       }
       
-      // Passo 2: Enviar email de resposta ao cliente (usando EmailJS)
+      // Parte 2: Enviar email diretamente via EmailJS
       const templateParams = {
         from_name: formData.name,
         from_email: formData.email,
@@ -73,35 +73,17 @@ const ContactPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          service_id: 'service_saas',
-          template_id: 'template_4303fes',
-          user_id: '_zmVVnlz9wGKRHCsx',
+          service_id: 'service_saas', // Use o service_id fornecido
+          template_id: 'template_4303fes', // Use o template_id fornecido
+          user_id: '_zmVVnlz9wGKRHCsx', // Use o public_key fornecido
           template_params: templateParams
         }),
       });
-      
+
       if (!emailjsResponse.ok) {
         const errorData = await emailjsResponse.text();
         console.error("EmailJS API error:", emailjsResponse.status, errorData);
-        // Não jogamos erro aqui para não travar o processo, já que o e-mail para o cliente é secundário
-      }
-
-      // Passo 3: Enviar notificação para o suporte (usando a função do Supabase)
-      try {
-        const { error: notificationError } = await supabase.functions.invoke('send-contact-notification', {
-          body: {
-            name: formData.name,
-            email: formData.email,
-            category: formData.category,
-            subject: formData.subject,
-            message: formData.message,
-          },
-        });
-        if (notificationError) {
-           console.error('Error sending notification email:', notificationError);
-        }
-      } catch (notificationError) {
-        console.error('Error calling send-contact-notification function:', notificationError);
+        throw new Error(`EmailJS API error: ${emailjsResponse.status} - ${errorData}`);
       }
 
       toast({
@@ -121,7 +103,7 @@ const ContactPage = () => {
       console.error('Error submitting contact form:', error);
       toast({
         title: "Erro ao enviar",
-        description: "Ocorreu um problema inesperado. Tente novamente ou entre em contato por e-mail.",
+        description: "Tente novamente ou entre em contato por email.",
         variant: "destructive",
       });
     } finally {
@@ -143,61 +125,6 @@ const ContactPage = () => {
             Estamos aqui para ajudar! Escolha a melhor forma de falar conosco.
           </p>
         </div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Informações de Contato */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-primary" />
-                  Email
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-2">Suporte geral</p>
-                <a href="mailto:suporte@orcafacil.com.br" className="text-primary hover:underline font-medium">
-                  suporte@orcafacil.com.br
-                </a>
-                <p className="text-muted-foreground mt-4 mb-2">Vendas</p>
-                <a href="mailto:vendas@orcafacil.com.br" className="text-primary hover:underline font-medium">
-                  vendas@orcafacil.com.br
-                </a>
-              </CardContent>
-            </Card>
-
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-primary" />
-                  Telefone
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-2">Suporte técnico</p>
-                <p className="font-medium">(11) 9999-9999</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Segunda a Sexta, 9h às 18h
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Endereço
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  São Paulo, SP<br />
-                  Brasil
-                </p>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Formulário de Contato */}
           <div className="md:col-span-2">
@@ -323,7 +250,6 @@ const ContactPage = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

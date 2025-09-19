@@ -206,28 +206,46 @@ const ManualProposalsPage = () => {
       const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
       const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
       
-      html2canvas(proposalRef.current, { 
+      const element = proposalRef.current;
+      const originalWidth = element.style.width;
+      const originalHeight = element.style.height;
+
+      // Forçar renderização em uma largura fixa e alta para garantir qualidade
+      element.style.width = '800px'; 
+      element.style.height = 'auto';
+
+      html2canvas(element, { 
         scale: 2, 
         backgroundColor: bgColor,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        windowWidth: 800,
+        windowHeight: element.scrollHeight
       }).then((canvas) => {
+        // Restaurar largura e altura originais
+        element.style.width = originalWidth;
+        element.style.height = originalHeight;
+
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
+        
         const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
         
-        // Remove margens - ocupa toda a largura
-        const imgX = 0;
-        const imgY = 0;
-        const finalWidth = pdfWidth;
-        const finalHeight = (imgHeight * finalWidth) / imgWidth;
+        pdf.addImage(imgData, "PNG", 0, 0, finalWidth, finalHeight);
         
-        pdf.addImage(imgData, "PNG", imgX, imgY, finalWidth, finalHeight);
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
+      }).catch((error) => {
+        // Restaurar largura e altura em caso de erro
+        element.style.width = originalWidth;
+        element.style.height = originalHeight;
+        console.error("Erro ao gerar PDF:", error);
+        toast.error("Erro ao gerar PDF. Tente novamente.");
       });
     }
   };

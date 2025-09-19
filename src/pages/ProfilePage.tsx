@@ -50,7 +50,7 @@ const ProfilePage = () => {
     const stripePortal = searchParams.get('stripe_portal');
     
     if (success) {
-      toast.success("Pagamento realizado! Sua assinatura foi ativada com sucesso.");
+      // toast.success("Pagamento realizado! Sua assinatura foi ativada com sucesso.");
       checkSubscription();
       // Remove success parameter from URL to prevent repeated messages
       const newSearchParams = new URLSearchParams(searchParams);
