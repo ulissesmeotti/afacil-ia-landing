@@ -1,14 +1,14 @@
+// src/pages/SavedProposalsPage.tsx
+import { ProposalStatusBadge } from "@/components/proposal-status-badge";
+import { ProposalStatusSelector } from "@/components/proposal-status-selector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Header from "@/components/ui/header";
-import { supabase } from "@/integrations/supabase/client";
 import usePlanLimits from "@/hooks/usePlanLimits";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
-import { DigitalSignature } from "@/components/signature/DigitalSignature";
-import { ProposalStatusBadge } from "@/components/proposal-status-badge";
-import { ProposalStatusSelector } from "@/components/proposal-status-selector";
-import { FileText, Trash2, Eye, PenTool, CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, Clock, Eye, FileText, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -225,11 +225,6 @@ const SavedProposalsPage = () => {
             <Link to={`/propostas/${proposal.id}`}>
               <Button size="sm">Ver Detalhes</Button>
             </Link>
-            <Dialog>
-              <Button variant="ghost" size="icon" title="Assinatura Digital">
-                <PenTool className="h-4 w-4" />
-              </Button>
-            </Dialog>
           </div>
         </div>
       </CardContent>

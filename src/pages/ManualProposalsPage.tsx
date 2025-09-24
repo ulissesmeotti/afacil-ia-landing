@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -100,6 +99,25 @@ const ManualProposalsPage = () => {
 
   const proposalRef = useRef<HTMLDivElement | null>(null);
 
+  // Determine active colors for the proposal preview
+  const activeColors = useMemo(() => {
+    if (selectedTemplate === 'custom') {
+      return {
+        primary: customColors.primary,
+        background: customColors.background,
+        text: customColors.text,
+        accent: customColors.accent,
+      };
+    }
+    const template = templates.find((t) => t.id === selectedTemplate) || templates[0];
+    return {
+      primary: template.primaryColor,
+      background: template.backgroundColor,
+      text: template.textColor,
+      accent: template.accentColor,
+    };
+  }, [selectedTemplate, customColors]);
+
   const addLineItem = () => {
     setLineItems([...lineItems, { description: "", quantity: 1, price: 0 }]);
     setIsSaved(false);
@@ -164,12 +182,15 @@ const ManualProposalsPage = () => {
       total: calculateTotal,
       creation_type: 'manual',
       template_id: selectedTemplate,
-      template_colors: selectedTemplate === 'custom' ? customColors : {
-        primary: currentTemplate.primaryColor,
-        background: currentTemplate.backgroundColor,
-        text: currentTemplate.textColor,
-        accent: currentTemplate.accentColor
-      }
+      template_colors: selectedTemplate === 'custom' ? customColors : (() => {
+        const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
+        return {
+          primary: currentTemplate.primaryColor,
+          background: currentTemplate.backgroundColor,
+          text: currentTemplate.textColor,
+          accent: currentTemplate.accentColor
+        };
+      })()
     };
 
     const { error } = await supabase.from("proposals").insert([newProposal]);
@@ -200,79 +221,48 @@ const ManualProposalsPage = () => {
       toast.error("Você precisa salvar o orçamento antes de fazer o download.");
       return;
     }
-    
+
     if (proposalRef.current) {
       toast.info("Preparando download do PDF...");
       const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
       const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
-      
+
       const element = proposalRef.current;
-      const originalWidth = element.style.width;
-      const originalHeight = element.style.height;
 
-      // Forçar renderização em uma largura fixa e alta para garantir qualidade
-      element.style.width = '800px'; 
-      element.style.height = 'auto';
-
-      html2canvas(element, { 
-        scale: 2, 
+      html2canvas(element, {
+        scale: 2,
         backgroundColor: bgColor,
         useCORS: true,
         allowTaint: true,
-        windowWidth: 800,
-        windowHeight: element.scrollHeight
+        // Forçar renderização com uma largura fixa para garantir a qualidade
+        width: 1000,
       }).then((canvas) => {
-        // Restaurar largura e altura originais
-        element.style.width = originalWidth;
-        element.style.height = originalHeight;
-
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-        
+
+        // Calcular a proporção para caber na página A4 sem distorcer
         const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
         const finalWidth = imgWidth * ratio;
         const finalHeight = imgHeight * ratio;
-        
+
+        // Adicionar a imagem no PDF
         pdf.addImage(imgData, "PNG", 0, 0, finalWidth, finalHeight);
-        
+
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
       }).catch((error) => {
-        // Restaurar largura e altura em caso de erro
-        element.style.width = originalWidth;
-        element.style.height = originalHeight;
         console.error("Erro ao gerar PDF:", error);
         toast.error("Erro ao gerar PDF. Tente novamente.");
       });
     }
   };
 
-  const currentTemplate = templates.find(t => t.id === selectedTemplate) || templates[0];
-  const activeColors = selectedTemplate === 'custom' ? customColors : {
-    primary: currentTemplate.primaryColor,
-    background: currentTemplate.backgroundColor,
-    text: currentTemplate.textColor,
-    accent: currentTemplate.accentColor
-  };
-
-  const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    setIsSaved(false);
-    if (templateId !== 'custom') {
-      const template = templates.find(t => t.id === templateId);
-      if (template) {
-        setCustomColors({
-          primary: template.primaryColor,
-          background: template.backgroundColor,
-          text: template.textColor,
-          accent: template.accentColor
-        });
-      }
-    }
-  };
+  function handleTemplateChange(value: string): void {
+    throw new Error("Function not implemented.");
+  }
 
   return (
     <>
@@ -394,22 +384,22 @@ const ManualProposalsPage = () => {
                     <Label htmlFor="deadline">Prazo de Entrega</Label>
                     <Input id="deadline" value={deadline} onChange={(e) => { setDeadline(e.target.value); setIsSaved(false); }} maxLength={50} />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="paymentTerms">Condições de Pagamento</Label>
-                    <Input id="paymentTerms" value={paymentTerms} onChange={(e) => { setPaymentTerms(e.target.value); setIsSaved(false); }} maxLength={100} />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="observations">Observações</Label>
-                    <Textarea id="observations" rows={4} value={observations} onChange={(e) => { setObservations(e.target.value); setIsSaved(false); }} maxLength={150} />
-                  </div>
+                  <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">Personalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personalização</CardTitle>
-                  <CardDescription>Escolha o template e personalize as cores do orçamento.</CardDescription>
-                </CardHeader>
+                {/* Add missing handleTemplateChange function */}
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="template">Template</Label>
@@ -427,7 +417,7 @@ const ManualProposalsPage = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {selectedTemplate === 'custom' && (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
@@ -437,12 +427,12 @@ const ManualProposalsPage = () => {
                             id="primaryColor"
                             type="color"
                             value={customColors.primary}
-                            onChange={(e) => { setCustomColors({...customColors, primary: e.target.value}); setIsSaved(false); }}
+                            onChange={(e) => { setCustomColors({ ...customColors, primary: e.target.value }); setIsSaved(false); }}
                             className="w-16 h-10 p-1 rounded"
                           />
                           <Input
                             value={customColors.primary}
-                            onChange={(e) => { setCustomColors({...customColors, primary: e.target.value}); setIsSaved(false); }}
+                            onChange={(e) => { setCustomColors({ ...customColors, primary: e.target.value }); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -450,16 +440,16 @@ const ManualProposalsPage = () => {
                       <div className="grid gap-2">
                         <Label htmlFor="backgroundColor">Cor de Fundo</Label>
                         <div className="flex gap-2">
-                           <Input
-                             id="backgroundColor"
-                             type="color"
-                             value={customColors.background}
-                             onChange={(e) => { setCustomColors({...customColors, background: e.target.value}); setIsSaved(false); }}
-                             className="w-16 h-10 p-1 rounded"
-                           />
+                          <Input
+                            id="backgroundColor"
+                            type="color"
+                            value={customColors.background}
+                            onChange={(e) => { setCustomColors({ ...customColors, background: e.target.value }); setIsSaved(false); }}
+                            className="w-16 h-10 p-1 rounded"
+                          />
                           <Input
                             value={customColors.background}
-                            onChange={(e) => { setCustomColors({...customColors, background: e.target.value}); setIsSaved(false); }}
+                            onChange={(e) => { setCustomColors({ ...customColors, background: e.target.value }); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -467,16 +457,16 @@ const ManualProposalsPage = () => {
                       <div className="grid gap-2">
                         <Label htmlFor="textColor">Cor do Texto</Label>
                         <div className="flex gap-2">
-                           <Input
-                             id="textColor"
-                             type="color"
-                             value={customColors.text}
-                             onChange={(e) => { setCustomColors({...customColors, text: e.target.value}); setIsSaved(false); }}
-                             className="w-16 h-10 p-1 rounded"
-                           />
+                          <Input
+                            id="textColor"
+                            type="color"
+                            value={customColors.text}
+                            onChange={(e) => { setCustomColors({ ...customColors, text: e.target.value }); setIsSaved(false); }}
+                            className="w-16 h-10 p-1 rounded"
+                          />
                           <Input
                             value={customColors.text}
-                            onChange={(e) => { setCustomColors({...customColors, text: e.target.value}); setIsSaved(false); }}
+                            onChange={(e) => { setCustomColors({ ...customColors, text: e.target.value }); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -484,16 +474,16 @@ const ManualProposalsPage = () => {
                       <div className="grid gap-2">
                         <Label htmlFor="accentColor">Cor de Destaque</Label>
                         <div className="flex gap-2">
-                           <Input
-                             id="accentColor"
-                             type="color"
-                             value={customColors.accent}
-                             onChange={(e) => { setCustomColors({...customColors, accent: e.target.value}); setIsSaved(false); }}
-                             className="w-16 h-10 p-1 rounded"
-                           />
+                          <Input
+                            id="accentColor"
+                            type="color"
+                            value={customColors.accent}
+                            onChange={(e) => { setCustomColors({ ...customColors, accent: e.target.value }); setIsSaved(false); }}
+                            className="w-16 h-10 p-1 rounded"
+                          />
                           <Input
                             value={customColors.accent}
-                            onChange={(e) => { setCustomColors({...customColors, accent: e.target.value}); setIsSaved(false); }}
+                            onChange={(e) => { setCustomColors({ ...customColors, accent: e.target.value }); setIsSaved(false); }}
                             className="flex-1"
                           />
                         </div>
@@ -502,23 +492,23 @@ const ManualProposalsPage = () => {
                   )}
                 </CardContent>
               </Card>
-              
+
               <div className="flex justify-end gap-2">
-                  <Button onClick={handleSave} variant="secondary">
-                      <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
-                  </Button>
-                  <Button onClick={handleDownloadPdf} disabled={!isSaved}>
-                      <Download className="h-4 w-4 mr-2" /> Baixar PDF
-                  </Button>
+                <Button onClick={handleSave} variant="secondary">
+                  <Save className="h-4 w-4 mr-2" /> Salvar Rascunho
+                </Button>
+                <Button onClick={handleDownloadPdf} disabled={!isSaved}>
+                  <Download className="h-4 w-4 mr-2" /> Baixar PDF
+                </Button>
               </div>
             </div>
 
-            <Card 
+            <Card
               ref={proposalRef}
               className={cn(
                 "p-8 sticky top-12 self-start shadow-xl w-full max-w-[794px] lg:h-[1123px] overflow-auto"
               )}
-              style={{ 
+              style={{
                 backgroundColor: activeColors.background,
                 color: activeColors.text
               }}

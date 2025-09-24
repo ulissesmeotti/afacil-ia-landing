@@ -257,25 +257,15 @@ const AIGenerationPage = () => {
       const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
       
       const element = proposalRef.current;
-      const originalWidth = element.style.width;
-      const originalHeight = element.style.height;
-
-      // Forçar renderização em uma largura fixa e alta para garantir qualidade
-      element.style.width = '800px'; 
-      element.style.height = 'auto';
 
       html2canvas(element, { 
         scale: 2, 
         backgroundColor: bgColor,
         useCORS: true,
         allowTaint: true,
-        windowWidth: 800,
-        windowHeight: element.scrollHeight
+        // Forçar renderização com uma largura fixa para garantir a qualidade
+        width: 1000,
       }).then((canvas) => {
-        // Restaurar largura e altura originais
-        element.style.width = originalWidth;
-        element.style.height = originalHeight;
-
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -283,18 +273,17 @@ const AIGenerationPage = () => {
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
         
+        // Calcular a proporção para caber na página A4 sem distorcer
         const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
         const finalWidth = imgWidth * ratio;
         const finalHeight = imgHeight * ratio;
         
+        // Adicionar a imagem no PDF
         pdf.addImage(imgData, "PNG", 0, 0, finalWidth, finalHeight);
         
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
         toast.success("PDF baixado com sucesso!");
       }).catch((error) => {
-        // Restaurar largura e altura em caso de erro
-        element.style.width = originalWidth;
-        element.style.height = originalHeight;
         console.error("Erro ao gerar PDF:", error);
         toast.error("Erro ao gerar PDF. Tente novamente.");
       });
