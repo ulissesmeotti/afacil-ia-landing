@@ -5,7 +5,7 @@ import Header from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import usePlanLimits from "@/hooks/usePlanLimits";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -67,6 +67,10 @@ const templates: Template[] = [
   }
 ];
 
+// Constantes para garantir consistência no layout de impressão A4
+const A4_WIDTH_FOR_PREVIEW = '794px'; 
+const A4_MARGIN = '32px'; // Equivalente a p-8, para margem interna do A4
+
 const ManualProposalsPage = () => {
   const [searchParams] = useSearchParams();
   const proposalId = searchParams.get("id");
@@ -85,8 +89,8 @@ const ManualProposalsPage = () => {
 
   const [proposalTitle, setProposalTitle] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [paymentTerms, setPaymentTerms] = useState("");
-  const [observations, setObservations] = useState("");
+  const [paymentTerms, setPaymentTerms] = useState(""); 
+  const [observations, setObservations] = useState(""); 
   const [lineItems, setLineItems] = useState<LineItem[]>([{ description: "", quantity: 1, price: 0 }]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
   const [customColors, setCustomColors] = useState({
@@ -158,7 +162,7 @@ const ManualProposalsPage = () => {
       return;
     }
 
-    // checar limite com o hook
+    // check usage limit
     if (!canCreate("manual")) {
       const limit = planDetails.manualLimit === Infinity ? "Ilimitado" : planDetails.manualLimit;
       toast.error(`Você atingiu o limite de ${limit} orçamentos manuais do seu plano.`);
@@ -168,11 +172,11 @@ const ManualProposalsPage = () => {
     const newProposal = {
       user_id: session.user.id,
       company_name: companyName,
-      company_number: companyNumber ? parseFloat(companyNumber) : null,
+      company_number: companyNumber,
       company_cnpj: companyCnpj,
       company_email: companyEmail,
       client_name: clientName,
-      client_number: clientNumber ? parseFloat(clientNumber) : null,
+      client_number: clientNumber,
       client_location: clientLocation,
       title: proposalTitle,
       line_items: JSON.stringify(lineItems),
@@ -202,10 +206,9 @@ const ManualProposalsPage = () => {
     }
 
     try {
-      // incrementa o contador no perfil
+      // increment usage count
       await incrementUsage("manual");
     } catch (incErr) {
-      // se falhar aqui, já salvou a proposta — notificar e logar
       console.error("Erro ao incrementar contagem:", incErr);
       toast.error("Orçamento salvo, mas houve erro ao atualizar contagem do plano.");
       resetForm();
@@ -228,31 +231,53 @@ const ManualProposalsPage = () => {
       const bgColor = selectedTemplate === 'custom' ? customColors.background : currentTemplate.backgroundColor;
 
       const element = proposalRef.current;
-
+      
+      const inputWidth = element.offsetWidth;
+      const inputHeight = element.offsetHeight;
+      
       html2canvas(element, {
-        scale: 2,
+        scale: 2, // Aumenta a escala para melhor resolução
         backgroundColor: bgColor,
         useCORS: true,
         allowTaint: true,
-        // Forçar renderização com uma largura fixa para garantir a qualidade
-        width: 1000,
+        // Usamos as dimensões reais do elemento no DOM para capturar todo o conteúdo
+        width: inputWidth,
+        height: inputHeight,
       }).then((canvas) => {
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth(); // Largura A4 em mm (210)
+        const pdfHeight = pdf.internal.pageSize.getHeight(); // Altura A4 em mm (297)
+        
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-
-        // Calcular a proporção para caber na página A4 sem distorcer
-        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-        const finalWidth = imgWidth * ratio;
-        const finalHeight = imgHeight * ratio;
-
-        // Adicionar a imagem no PDF
-        pdf.addImage(imgData, "PNG", 0, 0, finalWidth, finalHeight);
+        
+        // Calcula a escala proporcional para caber na largura total do A4
+        const scaledWidth = pdfWidth;
+        const scaledHeight = (imgHeight * scaledWidth) / imgWidth; 
+        
+        // Altura restante do conteúdo a ser renderizado
+        let heightLeft = scaledHeight;
+        let position = 0;
+        
+        // Adiciona a primeira página
+        pdf.addImage(imgData, "PNG", 0, 0, scaledWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+        
+        // Adiciona as páginas subsequentes se houver conteúdo restante
+        while (heightLeft > 0) {
+            position += pdfHeight; // Desloca para o topo da próxima página
+            pdf.addPage();
+            
+            // Adiciona a imagem, deslocada para cima pelo tamanho da página (posição)
+            // Note o sinal negativo em -position, que move a imagem dentro do PDF para mostrar o próximo segmento
+            pdf.addImage(imgData, 'PNG', 0, -position, scaledWidth, scaledHeight);
+            heightLeft -= pdfHeight;
+        }
 
         pdf.save(`${proposalTitle || "orcamento"}.pdf`);
+        toast.success("PDF baixado com sucesso!");
       }).catch((error) => {
         console.error("Erro ao gerar PDF:", error);
         toast.error("Erro ao gerar PDF. Tente novamente.");
@@ -260,10 +285,49 @@ const ManualProposalsPage = () => {
     }
   };
 
-  function handleTemplateChange(value: string): void {
-    throw new Error("Function not implemented.");
-  }
+  // Correção da função handleTemplateChange
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    setIsSaved(false);
+    
+    if (templateId === 'custom') {
+      return;
+    }
 
+    const template = templates.find((t) => t.id === templateId);
+    if (template) {
+      setCustomColors({
+        primary: template.primaryColor,
+        background: template.backgroundColor,
+        text: template.textColor,
+        accent: template.accentColor
+      });
+    }
+  };
+
+  // Componente para a linha divisória principal (1px solid Primary Color)
+  const MajorDivider = () => (
+    <div 
+      style={{ 
+        borderBottom: `1px solid ${activeColors.primary}`, 
+        width: '100%', 
+        height: '0',
+        margin: '1rem 0'
+      }} 
+    />
+  );
+
+  // Componente para a linha divisória sutil/interna (1px solid Accent Color)
+  const MinorDivider = ({ hasMargin = true }) => (
+    <div 
+      className="h-px w-full"
+      style={{ 
+        backgroundColor: activeColors.accent,
+        margin: hasMargin ? '1rem 0' : '0'
+      }} 
+    />
+  );
+  
   return (
     <>
       <Header />
@@ -279,7 +343,7 @@ const ManualProposalsPage = () => {
                 <CardContent className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="companyName">Nome da Empresa</Label>
-                    <Input id="companyName" value={companyName} onChange={(e) => { setCompanyName(e.target.value); setIsSaved(false); }} maxLength={35} />
+                    <Input id="companyName" value={companyName} onChange={(e) => { setCompanyName(e.target.value); setIsSaved(false); }} maxLength={60} />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
@@ -384,23 +448,17 @@ const ManualProposalsPage = () => {
                     <Label htmlFor="deadline">Prazo de Entrega</Label>
                     <Input id="deadline" value={deadline} onChange={(e) => { setDeadline(e.target.value); setIsSaved(false); }} maxLength={50} />
                   </div>
-                  <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templates.map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">Personalizado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </CardContent>
 
-                {/* Add missing handleTemplateChange function */}
-                <CardContent className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="paymentTerms">Condições de Pagamento</Label>
+                    <Input id="paymentTerms" value={paymentTerms} onChange={(e) => { setPaymentTerms(e.target.value); setIsSaved(false); }} maxLength={100} />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="observations">Observações</Label>
+                    <Textarea id="observations" rows={4} value={observations} onChange={(e) => { setObservations(e.target.value); setIsSaved(false); }} maxLength={500} />
+                  </div>
+                  
                   <div className="grid gap-2">
                     <Label htmlFor="template">Template</Label>
                     <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
@@ -503,33 +561,45 @@ const ManualProposalsPage = () => {
               </div>
             </div>
 
+            {/* Coluna do Preview - Estrutura otimizada para PDF */}
             <Card
               ref={proposalRef}
+              // Maximizando a largura para o A4
               className={cn(
-                "p-8 sticky top-12 self-start shadow-xl w-full max-w-[794px] lg:h-[1123px] overflow-auto"
+                "sticky top-12 self-start shadow-xl w-full lg:max-w-none min-h-[1123px] overflow-visible"
               )}
               style={{
                 backgroundColor: activeColors.background,
-                color: activeColors.text
+                color: activeColors.text,
+                maxWidth: A4_WIDTH_FOR_PREVIEW, /* Força a largura para a captura de tela */
+                minHeight: '1123px',
+                padding: A4_MARGIN, /* Margem interna do documento */
               }}
             >
-              <CardHeader className="p-0 mb-6 pb-4" style={{ borderBottomColor: activeColors.primary, borderBottomWidth: '2px' }}>
+              <CardHeader className="p-0 mb-6 pb-4">
                 <div className="flex justify-between items-start">
                   <h2 className="text-3xl font-bold" style={{ color: activeColors.primary }}>ORÇAMENTO</h2>
                   <div className="text-right">
-                    <p className="font-semibold" style={{ color: activeColors.text }}>{companyName || "Nome da Sua Empresa"}</p>
+                    <p className="font-semibold break-words" style={{ color: activeColors.text }}>{companyName || "Nome da Sua Empresa"}</p>
                     {companyEmail && <p className="text-sm opacity-75">Email: {companyEmail}</p>}
                     {companyNumber && <p className="text-sm opacity-75">Telefone: {companyNumber}</p>}
                     {companyCnpj && <p className="text-sm opacity-75">CNPJ: {companyCnpj}</p>}
                   </div>
                 </div>
-                <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
+                
+                {/* LINHA 1: Linha divisória principal (1px solid Primary Color) */}
+                <MajorDivider color={activeColors.primary} thickness='1px' verticalMargin='1rem' />
+
                 <div>
                   <p className="text-sm font-semibold" style={{ color: activeColors.text }}>Para:</p>
                   <p className="font-medium" style={{ color: activeColors.text }}>{clientName || "Nome do Cliente"}</p>
                   {clientNumber && <p className="text-sm opacity-75">Telefone: {clientNumber}</p>}
                   {clientLocation && <p className="text-sm opacity-75">Localização: {clientLocation}</p>}
                 </div>
+                
+                {/* LINHA 2: Linha divisória abaixo dos dados do cliente (1px solid Primary Color) */}
+                <MajorDivider color={activeColors.primary} thickness='1px' verticalMargin='1rem' />
+
               </CardHeader>
               <CardContent className="p-0">
                 <h3 className="text-xl font-semibold mb-4" style={{ color: activeColors.text }}>
@@ -543,7 +613,8 @@ const ManualProposalsPage = () => {
                     <span className="col-span-2 text-right">Total</span>
                   </div>
                   {lineItems.map((item, index) => (
-                    <div key={index} className="grid grid-cols-10 p-2" style={{ borderTop: `1px solid ${activeColors.primary}`, color: activeColors.text }}>
+                    // LINHAS DA TABELA: 1px solid Accent Color
+                    <div key={index} className="grid grid-cols-10 p-2" style={{ borderTop: `1px solid ${activeColors.accent}`, color: activeColors.text }}>
                       <span className="col-span-4">{item.description || "Item sem descrição"}</span>
                       <span className="col-span-2 text-center">{item.quantity}</span>
                       <span className="col-span-2 text-right">R$ {item.price.toFixed(2)}</span>
@@ -551,38 +622,51 @@ const ManualProposalsPage = () => {
                     </div>
                   ))}
                 </div>
+                
+                {/* LINHA 3: Linha divisória antes do Total (1px solid Accent Color para ser sutil) */}
+                <MinorDivider color={activeColors.accent} verticalMargin='1rem' />
+                
                 <div className="mt-4 flex justify-end">
                   <div className="text-right">
                     <p className="text-lg font-semibold" style={{ color: activeColors.text }}>Total: R$ {calculateTotal.toFixed(2)}</p>
                   </div>
                 </div>
-                {deadline && (
-                  <>
-                    <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
-                    <div>
-                      <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Prazo de Entrega:</p>
-                      <p className="text-sm opacity-75">{deadline}</p>
-                    </div>
-                  </>
-                )}
-                {paymentTerms && (
-                  <>
-                    <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
-                    <div>
-                      <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Condições de Pagamento:</p>
-                      <p className="text-sm opacity-75">{paymentTerms}</p>
-                    </div>
-                  </>
-                )}
-                {observations && (
-                  <>
-                    <Separator className="my-4" style={{ backgroundColor: activeColors.primary }} />
-                    <div>
-                      <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Observações:</p>
-                      <p className="text-sm opacity-75">{observations}</p>
-                    </div>
-                  </>
-                )}
+                
+                {/* LINHA 4: Linha divisória final (1px solid Primary Color) */}
+                <MajorDivider color={activeColors.primary} thickness='1px' verticalMargin='0.5rem' />
+
+                <div className='mt-8 space-y-4'> 
+                    
+                    {deadline && (
+                        <>
+                            <div className='pt-0'>
+                                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Prazo de Entrega:</p>
+                                <p className="text-sm opacity-75">{deadline}</p>
+                            </div>
+                            {/* LINHA CONDICIONAL 1: 1px solid Accent Color */}
+                            {(paymentTerms || observations) && <MinorDivider color={activeColors.accent} verticalMargin='1rem' />}
+                        </>
+                    )}
+                    
+                    {paymentTerms && (
+                        <>
+                            <div className='pt-0'>
+                                <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Condições de Pagamento:</p>
+                                <p className="text-sm opacity-75">{paymentTerms}</p>
+                            </div>
+                            {/* LINHA CONDICIONAL 2: 1px solid Accent Color */}
+                            {(observations) && <MinorDivider color={activeColors.accent} verticalMargin='1rem' />}
+                        </>
+                    )}
+
+                    {observations && (
+                        <div className='pt-0'>
+                            <p className="font-semibold mb-1" style={{ color: activeColors.text }}>Observações:</p>
+                            <p className="text-sm opacity-75 whitespace-pre-wrap">{observations}</p>
+                        </div>
+                    )}
+                </div>
+
               </CardContent>
             </Card>
           </div>
